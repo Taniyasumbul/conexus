@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Apex Logistics ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+The total annual fees for the Services are USD 360,320, covering 2067 named users.
+
+2. Payment Terms
+Payment shall be made net 90 days following Customer's acceptance of the Services, at Customer's sole discretion.
+
+3. Renewal
+The Agreement renews automatically and Vendor may not increase prices on any renewal.
+
+4. Termination
+This Agreement may be terminated by either party upon insolvency of the other or uncured material breach.
+
+5. Warranties
+Vendor guarantees 100% uptime and that the Services will be error-free. Any failure shall entitle Customer to service credits of 50% of annual fees per incident.
+
+6. Limitation of Liability
+Vendor's aggregate liability shall not exceed ten (10) times the total contract value, and the exclusion of consequential damages shall apply only to Customer.
+
+7. Indemnification
+Vendor agrees to indemnify Customer and its affiliates against all losses howsoever arising in connection with this Agreement, without limitation and regardless of fault.
+
+8. Intellectual Property
+Vendor retains all right, title and interest in the Software and any improvements. Customer receives a non-exclusive licence for the Term.
+
+9. Confidentiality
+Confidentiality obligations shall bind Vendor only and shall survive indefinitely.
+
+10. Data Protection
+Vendor shall process personal data only on documented instructions and implement appropriate technical and organisational measures in line with the DPDP Act, 2023.
+
+11. Exclusivity
+During the Term and for two (2) years thereafter, Vendor shall not provide similar services to any competitor of Customer.
+
+12. Assignment
+Neither party may assign this Agreement without the other's prior written consent, except to a successor in a merger or acquisition.
+
+13. Governing Law
+This Agreement shall be governed by Indian law, and disputes shall be resolved by arbitration seated in Delhi.
+
+14. General
+If any provision is held invalid, the remainder of this Agreement shall continue in full force.

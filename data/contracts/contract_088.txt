@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Indigo Analytics ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+The total annual fees for the Services are USD 2,730, covering 29 named users.
+
+2. Payment Terms
+Fees are invoiced annually in advance and are due within 30 days of the date of invoice.
+
+3. Renewal
+This Agreement renews for successive one-year terms unless either party gives thirty (30) days' notice of non-renewal.
+
+4. Termination
+This Agreement may be terminated by either party upon insolvency of the other or uncured material breach.
+
+5. Warranties
+Vendor warrants that the Services will perform materially in accordance with the Documentation. The sole remedy for breach is re-performance or a pro-rata refund.
+
+6. Limitation of Liability
+The total cumulative liability of either party arising out of this Agreement shall be limited to one times (1x) the annual fees.
+
+7. Indemnification
+Vendor shall indemnify, defend and hold harmless Customer from any and all claims, losses and expenses of whatever nature, including those arising from Customer's own negligence.
+
+8. Intellectual Property
+All intellectual property rights in the platform remain with Vendor. Customer owns its Customer Data.
+
+9. Confidentiality
+Confidentiality obligations shall bind Vendor only and shall survive indefinitely.
+
+10. Data Protection
+Each party shall comply with applicable data protection law. Vendor shall notify Customer of any personal data breach without undue delay.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Neither party may assign this Agreement without the other's prior written consent, except to a successor in a merger or acquisition.
+
+13. Governing Law
+This Agreement is governed by the laws of the State of New York, and the courts of New York shall have exclusive jurisdiction.
+
+14. General
+Notices shall be in writing and delivered by email to the addresses set out above.

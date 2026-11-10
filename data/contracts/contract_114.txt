@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Apex Mobility ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+The total annual fees for the Services are USD 2,720, covering 26 named users.
+
+2. Payment Terms
+Invoices are payable net 30 days from receipt. Late amounts accrue interest at 1% per month.
+
+3. Renewal
+The subscription will automatically renew for 12 months unless cancelled at least 30 days before the renewal date.
+
+4. Termination
+Either party may terminate this Agreement for material breach that remains uncured thirty (30) days after written notice.
+
+5. Warranties
+Vendor warrants that the Services will perform materially in accordance with the Documentation. The sole remedy for breach is re-performance or a pro-rata refund.
+
+6. Limitation of Liability
+The total cumulative liability of either party arising out of this Agreement shall be limited to one times (1x) the annual fees.
+
+7. Indemnification
+Vendor shall defend Customer against third-party claims alleging that the Software infringes a patent or copyright, subject to the liability cap.
+
+8. Intellectual Property
+All intellectual property rights in the platform remain with Vendor. Customer owns its Customer Data.
+
+9. Confidentiality
+Each party shall protect the other's Confidential Information with reasonable care for a period of three (3) years following disclosure.
+
+10. Data Protection
+Vendor shall process personal data only on documented instructions and implement appropriate technical and organisational measures in line with the DPDP Act, 2023.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Neither party may assign this Agreement without the other's prior written consent, except to a successor in a merger or acquisition.
+
+13. Governing Law
+Disputes shall be finally settled under the rules of the Singapore International Arbitration Centre, seated in Singapore.
+
+14. General
+If any provision is held invalid, the remainder of this Agreement shall continue in full force.

@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Cobalt Health ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+The total annual fees for the Services are USD 9,170, covering 148 named users.
+
+2. Payment Terms
+Customer shall pay all undisputed invoices within thirty (30) days of the invoice date.
+
+3. Renewal
+Upon renewal, fees shall remain fixed at the initial rates for a period of five (5) years.
+
+4. Termination
+Customer may terminate this Agreement for convenience at any time on seven (7) days' notice, and Vendor shall refund all prepaid fees in full.
+
+5. Warranties
+Vendor warrants that the Services will perform materially in accordance with the Documentation. The sole remedy for breach is re-performance or a pro-rata refund.
+
+6. Limitation of Liability
+The total cumulative liability of either party arising out of this Agreement shall be limited to one times (1x) the annual fees.
+
+7. Indemnification
+Vendor shall defend Customer against third-party claims alleging that the Software infringes a patent or copyright, subject to the liability cap.
+
+8. Intellectual Property
+All intellectual property rights in the platform remain with Vendor. Customer owns its Customer Data.
+
+9. Confidentiality
+The receiving party shall use Confidential Information solely to perform this Agreement and shall not disclose it except to personnel with a need to know.
+
+10. Data Protection
+Vendor shall process personal data only on documented instructions and implement appropriate technical and organisational measures in line with the DPDP Act, 2023.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Customer may assign this Agreement freely to any third party. Vendor may not assign or subcontract any obligation without consent.
+
+13. Governing Law
+This Agreement is governed by the laws of India and the courts at New Delhi shall have exclusive jurisdiction.
+
+14. General
+Notices shall be in writing and delivered by email to the addresses set out above.

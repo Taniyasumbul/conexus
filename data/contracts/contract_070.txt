@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Nimbus Systems ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+The total annual fees for the Services are USD 3,930, covering 40 named users.
+
+2. Payment Terms
+Fees are invoiced annually in advance and are due within 30 days of the date of invoice.
+
+3. Renewal
+Upon renewal, fees shall remain fixed at the initial rates for a period of five (5) years.
+
+4. Termination
+Either party may terminate this Agreement for material breach that remains uncured thirty (30) days after written notice.
+
+5. Warranties
+Vendor warrants that the Services will perform materially in accordance with the Documentation. The sole remedy for breach is re-performance or a pro-rata refund.
+
+6. Limitation of Liability
+Vendor's aggregate liability shall not exceed ten (10) times the total contract value, and the exclusion of consequential damages shall apply only to Customer.
+
+7. Indemnification
+Vendor agrees to indemnify Customer and its affiliates against all losses howsoever arising in connection with this Agreement, without limitation and regardless of fault.
+
+8. Intellectual Property
+Vendor retains all right, title and interest in the Software and any improvements. Customer receives a non-exclusive licence for the Term.
+
+9. Confidentiality
+Each party shall protect the other's Confidential Information with reasonable care for a period of three (3) years following disclosure.
+
+10. Data Protection
+Vendor shall process personal data only on documented instructions and implement appropriate technical and organisational measures in line with the DPDP Act, 2023.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Neither party may assign this Agreement without the other's prior written consent, except to a successor in a merger or acquisition.
+
+13. Governing Law
+This Agreement shall be governed by Indian law, and disputes shall be resolved by arbitration seated in Delhi.
+
+14. General
+Notices shall be in writing and delivered by email to the addresses set out above.

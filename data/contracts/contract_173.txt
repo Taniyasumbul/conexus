@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Kite Works ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+The total annual fees for the Services are USD 1,650, covering 16 named users.
+
+2. Payment Terms
+Customer shall pay all undisputed invoices within thirty (30) days of the invoice date.
+
+3. Renewal
+Upon renewal, fees shall remain fixed at the initial rates for a period of five (5) years.
+
+4. Termination
+Either party may terminate this Agreement for material breach that remains uncured thirty (30) days after written notice.
+
+5. Warranties
+Vendor warrants that the Services will perform materially in accordance with the Documentation. The sole remedy for breach is re-performance or a pro-rata refund.
+
+6. Limitation of Liability
+Vendor's liability under this Agreement shall be unlimited, and nothing herein shall limit Customer's recovery of any losses.
+
+7. Indemnification
+Vendor shall defend Customer against third-party claims alleging that the Software infringes a patent or copyright, subject to the liability cap.
+
+8. Intellectual Property
+All intellectual property rights in the platform remain with Vendor. Customer owns its Customer Data.
+
+9. Confidentiality
+Each party shall protect the other's Confidential Information with reasonable care for a period of three (3) years following disclosure.
+
+10. Data Protection
+Customer and its auditors may audit Vendor's systems, premises and records at any time without notice and at Vendor's cost.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Customer may assign this Agreement freely to any third party. Vendor may not assign or subcontract any obligation without consent.
+
+13. Governing Law
+This Agreement is governed by the laws of India and the courts at New Delhi shall have exclusive jurisdiction.
+
+14. General
+Notices shall be in writing and delivered by email to the addresses set out above.

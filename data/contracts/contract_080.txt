@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Quanta Systems ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+The total annual fees for the Services are USD 14,580, covering 133 named users.
+
+2. Payment Terms
+Invoices are payable net 30 days from receipt. Late amounts accrue interest at 1% per month.
+
+3. Renewal
+The Agreement renews automatically and Vendor may not increase prices on any renewal.
+
+4. Termination
+Either party may terminate this Agreement for material breach that remains uncured thirty (30) days after written notice.
+
+5. Warranties
+Vendor shall use commercially reasonable efforts to make the Services available 99.5% of the time, excluding scheduled maintenance.
+
+6. Limitation of Liability
+Except for breach of confidentiality, each party's aggregate liability under this Agreement shall not exceed the fees paid or payable in the twelve (12) months preceding the claim.
+
+7. Indemnification
+Each party shall indemnify the other against third-party claims to the extent arising from its own gross negligence or wilful misconduct.
+
+8. Intellectual Property
+All intellectual property rights in the platform remain with Vendor. Customer owns its Customer Data.
+
+9. Confidentiality
+Each party shall protect the other's Confidential Information with reasonable care for a period of three (3) years following disclosure.
+
+10. Data Protection
+Each party shall comply with applicable data protection law. Vendor shall notify Customer of any personal data breach without undue delay.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Neither party may assign this Agreement without the other's prior written consent, except to a successor in a merger or acquisition.
+
+13. Governing Law
+This Agreement shall be governed by Indian law, and disputes shall be resolved by arbitration seated in Delhi.
+
+14. General
+If any provision is held invalid, the remainder of this Agreement shall continue in full force.

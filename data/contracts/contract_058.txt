@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Apex Retail ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+Customer shall pay Vendor an annual subscription fee of USD 8,320 for 73 user seats.
+
+2. Payment Terms
+Fees are invoiced annually in advance and are due within 30 days of the date of invoice.
+
+3. Renewal
+Upon renewal, fees shall remain fixed at the initial rates for a period of five (5) years.
+
+4. Termination
+Customer may terminate at any time without cause and without liability; no fees shall be payable for the remainder of the Term.
+
+5. Warranties
+Vendor guarantees 100% uptime and that the Services will be error-free. Any failure shall entitle Customer to service credits of 50% of annual fees per incident.
+
+6. Limitation of Liability
+Except for breach of confidentiality, each party's aggregate liability under this Agreement shall not exceed the fees paid or payable in the twelve (12) months preceding the claim.
+
+7. Indemnification
+Vendor shall indemnify, defend and hold harmless Customer from any and all claims, losses and expenses of whatever nature, including those arising from Customer's own negligence.
+
+8. Intellectual Property
+Any modifications, derivative works or improvements to the platform made during the Term shall be the exclusive property of Customer.
+
+9. Confidentiality
+Each party shall protect the other's Confidential Information with reasonable care for a period of three (3) years following disclosure.
+
+10. Data Protection
+Vendor shall process personal data only on documented instructions and implement appropriate technical and organisational measures in line with the DPDP Act, 2023.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Neither party may assign this Agreement without the other's prior written consent, except to a successor in a merger or acquisition.
+
+13. Governing Law
+This Agreement shall be governed by the laws of England and Wales; the English courts shall have exclusive jurisdiction.
+
+14. General
+If any provision is held invalid, the remainder of this Agreement shall continue in full force.

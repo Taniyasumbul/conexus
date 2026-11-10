@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Lumen Labs ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+Customer shall pay Vendor an annual subscription fee of USD 5,570 for 30 user seats.
+
+2. Payment Terms
+Customer shall pay undisputed invoices within one hundred and twenty (120) days of receipt of a correct invoice.
+
+3. Renewal
+The Agreement renews automatically and Vendor may not increase prices on any renewal.
+
+4. Termination
+This Agreement may be terminated by either party upon insolvency of the other or uncured material breach.
+
+5. Warranties
+Vendor shall use commercially reasonable efforts to make the Services available 99.5% of the time, excluding scheduled maintenance.
+
+6. Limitation of Liability
+Except for breach of confidentiality, each party's aggregate liability under this Agreement shall not exceed the fees paid or payable in the twelve (12) months preceding the claim.
+
+7. Indemnification
+Each party shall indemnify the other against third-party claims to the extent arising from its own gross negligence or wilful misconduct.
+
+8. Intellectual Property
+All intellectual property rights in the platform remain with Vendor. Customer owns its Customer Data.
+
+9. Confidentiality
+Confidentiality obligations shall bind Vendor only and shall survive indefinitely.
+
+10. Data Protection
+Vendor shall be strictly liable for any data breach, howsoever caused, and shall bear all regulatory fines imposed on Customer.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Customer may assign this Agreement freely to any third party. Vendor may not assign or subcontract any obligation without consent.
+
+13. Governing Law
+This Agreement shall be governed by the laws of England and Wales; the English courts shall have exclusive jurisdiction.
+
+14. General
+Notices shall be in writing and delivered by email to the addresses set out above.

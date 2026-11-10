@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Helix Systems ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+Customer shall pay Vendor an annual subscription fee of USD 1,700 for 39 user seats.
+
+2. Payment Terms
+Customer will pay each invoice within sixty (60) days of receipt.
+
+3. Renewal
+The subscription will automatically renew for 12 months unless cancelled at least 30 days before the renewal date.
+
+4. Termination
+Customer may terminate at any time without cause and without liability; no fees shall be payable for the remainder of the Term.
+
+5. Warranties
+Vendor warrants that the Services are fit for every purpose for which Customer may use them.
+
+6. Limitation of Liability
+Vendor's aggregate liability shall not exceed ten (10) times the total contract value, and the exclusion of consequential damages shall apply only to Customer.
+
+7. Indemnification
+Vendor shall hold Customer harmless from any and all liabilities, including penalties and fines, regardless of whether caused by Vendor.
+
+8. Intellectual Property
+All intellectual property rights in the platform remain with Vendor. Customer owns its Customer Data.
+
+9. Confidentiality
+Vendor shall keep all information received from Customer confidential in perpetuity. Customer shall have no confidentiality obligations.
+
+10. Data Protection
+Vendor shall process personal data only on documented instructions and implement appropriate technical and organisational measures in line with the DPDP Act, 2023.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Customer may assign this Agreement freely to any third party. Vendor may not assign or subcontract any obligation without consent.
+
+13. Governing Law
+This Agreement is governed by the laws of the State of New York, and the courts of New York shall have exclusive jurisdiction.
+
+14. General
+If any provision is held invalid, the remainder of this Agreement shall continue in full force.

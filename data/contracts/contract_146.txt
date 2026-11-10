@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Orbit Health ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+Customer shall pay Vendor an annual subscription fee of USD 40,990 for 136 user seats.
+
+2. Payment Terms
+Fees are invoiced annually in advance and are due within 30 days of the date of invoice.
+
+3. Renewal
+The subscription will automatically renew for 12 months unless cancelled at least 30 days before the renewal date.
+
+4. Termination
+This Agreement may be terminated by either party upon insolvency of the other or uncured material breach.
+
+5. Warranties
+Vendor warrants that the Services will perform materially in accordance with the Documentation. The sole remedy for breach is re-performance or a pro-rata refund.
+
+6. Limitation of Liability
+In no event shall either party be liable for indirect or consequential damages, and each party's total liability is capped at the amounts paid under this Agreement in the prior 12 months.
+
+7. Indemnification
+Each party shall indemnify the other against third-party claims to the extent arising from its own gross negligence or wilful misconduct.
+
+8. Intellectual Property
+Vendor retains all right, title and interest in the Software and any improvements. Customer receives a non-exclusive licence for the Term.
+
+9. Confidentiality
+Each party shall protect the other's Confidential Information with reasonable care for a period of three (3) years following disclosure.
+
+10. Data Protection
+Vendor shall be strictly liable for any data breach, howsoever caused, and shall bear all regulatory fines imposed on Customer.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Neither party may assign this Agreement without the other's prior written consent, except to a successor in a merger or acquisition.
+
+13. Governing Law
+Disputes shall be finally settled under the rules of the Singapore International Arbitration Centre, seated in Singapore.
+
+14. General
+Notices shall be in writing and delivered by email to the addresses set out above.

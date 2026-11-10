@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Banyan Health ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+Customer shall pay Vendor an annual subscription fee of USD 1,630 for 16 user seats.
+
+2. Payment Terms
+Customer will pay each invoice within sixty (60) days of receipt.
+
+3. Renewal
+This Agreement renews for successive one-year terms unless either party gives thirty (30) days' notice of non-renewal.
+
+4. Termination
+This Agreement may be terminated by either party upon insolvency of the other or uncured material breach.
+
+5. Warranties
+Vendor warrants that the Services will perform materially in accordance with the Documentation. The sole remedy for breach is re-performance or a pro-rata refund.
+
+6. Limitation of Liability
+The total cumulative liability of either party arising out of this Agreement shall be limited to one times (1x) the annual fees.
+
+7. Indemnification
+Vendor shall defend Customer against third-party claims alleging that the Software infringes a patent or copyright, subject to the liability cap.
+
+8. Intellectual Property
+All intellectual property rights in the platform remain with Vendor. Customer owns its Customer Data.
+
+9. Confidentiality
+The receiving party shall use Confidential Information solely to perform this Agreement and shall not disclose it except to personnel with a need to know.
+
+10. Data Protection
+Each party shall comply with applicable data protection law. Vendor shall notify Customer of any personal data breach without undue delay.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Neither party may assign this Agreement without the other's prior written consent, except to a successor in a merger or acquisition.
+
+13. Governing Law
+Disputes shall be finally settled under the rules of the Singapore International Arbitration Centre, seated in Singapore.
+
+14. General
+If any provision is held invalid, the remainder of this Agreement shall continue in full force.

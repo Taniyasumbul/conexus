@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Vertex Foods ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+The total annual fees for the Services are USD 1,980, covering 37 named users.
+
+2. Payment Terms
+Invoices are payable net 30 days from receipt. Late amounts accrue interest at 1% per month.
+
+3. Renewal
+Upon renewal, fees shall remain fixed at the initial rates for a period of five (5) years.
+
+4. Termination
+This Agreement may be terminated by either party upon insolvency of the other or uncured material breach.
+
+5. Warranties
+Vendor warrants that the Services will perform materially in accordance with the Documentation. The sole remedy for breach is re-performance or a pro-rata refund.
+
+6. Limitation of Liability
+In no event shall either party be liable for indirect or consequential damages, and each party's total liability is capped at the amounts paid under this Agreement in the prior 12 months.
+
+7. Indemnification
+Vendor shall defend Customer against third-party claims alleging that the Software infringes a patent or copyright, subject to the liability cap.
+
+8. Intellectual Property
+All intellectual property rights in the platform remain with Vendor. Customer owns its Customer Data.
+
+9. Confidentiality
+Each party shall protect the other's Confidential Information with reasonable care for a period of three (3) years following disclosure.
+
+10. Data Protection
+Each party shall comply with applicable data protection law. Vendor shall notify Customer of any personal data breach without undue delay.
+
+11. Exclusivity
+During the Term and for two (2) years thereafter, Vendor shall not provide similar services to any competitor of Customer.
+
+12. Assignment
+Customer may assign this Agreement freely to any third party. Vendor may not assign or subcontract any obligation without consent.
+
+13. Governing Law
+This Agreement shall be governed by the laws of England and Wales; the English courts shall have exclusive jurisdiction.
+
+14. General
+This Agreement constitutes the entire agreement between the parties and supersedes all prior understandings.

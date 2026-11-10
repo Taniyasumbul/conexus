@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Kite Fintech ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+The total annual fees for the Services are USD 8,380, covering 145 named users.
+
+2. Payment Terms
+Payment shall be made net 90 days following Customer's acceptance of the Services, at Customer's sole discretion.
+
+3. Renewal
+Upon renewal, fees shall remain fixed at the initial rates for a period of five (5) years.
+
+4. Termination
+Either party may terminate this Agreement for material breach that remains uncured thirty (30) days after written notice.
+
+5. Warranties
+Vendor warrants that the Services will perform materially in accordance with the Documentation. The sole remedy for breach is re-performance or a pro-rata refund.
+
+6. Limitation of Liability
+Except for breach of confidentiality, each party's aggregate liability under this Agreement shall not exceed the fees paid or payable in the twelve (12) months preceding the claim.
+
+7. Indemnification
+Each party shall indemnify the other against third-party claims to the extent arising from its own gross negligence or wilful misconduct.
+
+8. Intellectual Property
+All intellectual property rights in the platform remain with Vendor. Customer owns its Customer Data.
+
+9. Confidentiality
+Each party shall protect the other's Confidential Information with reasonable care for a period of three (3) years following disclosure.
+
+10. Data Protection
+Each party shall comply with applicable data protection law. Vendor shall notify Customer of any personal data breach without undue delay.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Neither party may assign this Agreement without the other's prior written consent, except to a successor in a merger or acquisition.
+
+13. Governing Law
+This Agreement is governed by the laws of the State of New York, and the courts of New York shall have exclusive jurisdiction.
+
+14. General
+This Agreement constitutes the entire agreement between the parties and supersedes all prior understandings.

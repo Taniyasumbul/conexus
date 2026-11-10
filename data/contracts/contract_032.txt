@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Saffron Logistics ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+Customer shall pay Vendor an annual subscription fee of USD 1,050 for 18 user seats.
+
+2. Payment Terms
+Customer shall pay all undisputed invoices within thirty (30) days of the invoice date.
+
+3. Renewal
+Upon renewal, fees shall remain fixed at the initial rates for a period of five (5) years.
+
+4. Termination
+Either party may terminate this Agreement for material breach that remains uncured thirty (30) days after written notice.
+
+5. Warranties
+Vendor warrants that the Services are fit for every purpose for which Customer may use them.
+
+6. Limitation of Liability
+Vendor's liability under this Agreement shall be unlimited, and nothing herein shall limit Customer's recovery of any losses.
+
+7. Indemnification
+Each party shall indemnify the other against third-party claims to the extent arising from its own gross negligence or wilful misconduct.
+
+8. Intellectual Property
+Vendor hereby assigns to Customer all right, title and interest in any software, tools, know-how and background IP used to deliver the Services.
+
+9. Confidentiality
+Vendor shall keep all information received from Customer confidential in perpetuity. Customer shall have no confidentiality obligations.
+
+10. Data Protection
+Vendor shall process personal data only on documented instructions and implement appropriate technical and organisational measures in line with the DPDP Act, 2023.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Customer may assign this Agreement freely to any third party. Vendor may not assign or subcontract any obligation without consent.
+
+13. Governing Law
+Disputes shall be finally settled under the rules of the Singapore International Arbitration Centre, seated in Singapore.
+
+14. General
+This Agreement constitutes the entire agreement between the parties and supersedes all prior understandings.

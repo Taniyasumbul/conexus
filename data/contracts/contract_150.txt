@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Lumen Retail ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+Customer shall pay Vendor an annual subscription fee of USD 33,530 for 148 user seats.
+
+2. Payment Terms
+Payment shall be made net 90 days following Customer's acceptance of the Services, at Customer's sole discretion.
+
+3. Renewal
+The Agreement renews automatically and Vendor may not increase prices on any renewal.
+
+4. Termination
+This Agreement may be terminated by either party upon insolvency of the other or uncured material breach.
+
+5. Warranties
+Vendor guarantees 100% uptime and that the Services will be error-free. Any failure shall entitle Customer to service credits of 50% of annual fees per incident.
+
+6. Limitation of Liability
+The limitations of liability set out herein shall not apply to Vendor. Vendor shall be liable for all direct, indirect and consequential losses without limit.
+
+7. Indemnification
+Each party shall indemnify the other against third-party claims to the extent arising from its own gross negligence or wilful misconduct.
+
+8. Intellectual Property
+Vendor retains all right, title and interest in the Software and any improvements. Customer receives a non-exclusive licence for the Term.
+
+9. Confidentiality
+Vendor shall keep all information received from Customer confidential in perpetuity. Customer shall have no confidentiality obligations.
+
+10. Data Protection
+Vendor shall be strictly liable for any data breach, howsoever caused, and shall bear all regulatory fines imposed on Customer.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Neither party may assign this Agreement without the other's prior written consent, except to a successor in a merger or acquisition.
+
+13. Governing Law
+This Agreement is governed by the laws of the State of New York, and the courts of New York shall have exclusive jurisdiction.
+
+14. General
+This Agreement constitutes the entire agreement between the parties and supersedes all prior understandings.

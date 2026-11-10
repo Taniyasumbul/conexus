@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Quanta Logistics ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+The total annual fees for the Services are USD 124,690, covering 1369 named users.
+
+2. Payment Terms
+Fees are invoiced annually in advance and are due within 30 days of the date of invoice.
+
+3. Renewal
+This Agreement renews for successive one-year terms unless either party gives thirty (30) days' notice of non-renewal.
+
+4. Termination
+Either party may terminate this Agreement for material breach that remains uncured thirty (30) days after written notice.
+
+5. Warranties
+Vendor shall use commercially reasonable efforts to make the Services available 99.5% of the time, excluding scheduled maintenance.
+
+6. Limitation of Liability
+In no event shall either party be liable for indirect or consequential damages, and each party's total liability is capped at the amounts paid under this Agreement in the prior 12 months.
+
+7. Indemnification
+Each party shall indemnify the other against third-party claims to the extent arising from its own gross negligence or wilful misconduct.
+
+8. Intellectual Property
+Vendor retains all right, title and interest in the Software and any improvements. Customer receives a non-exclusive licence for the Term.
+
+9. Confidentiality
+Each party shall protect the other's Confidential Information with reasonable care for a period of three (3) years following disclosure.
+
+10. Data Protection
+Each party shall comply with applicable data protection law. Vendor shall notify Customer of any personal data breach without undue delay.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Neither party may assign this Agreement without the other's prior written consent, except to a successor in a merger or acquisition.
+
+13. Governing Law
+This Agreement shall be governed by Indian law, and disputes shall be resolved by arbitration seated in Delhi.
+
+14. General
+If any provision is held invalid, the remainder of this Agreement shall continue in full force.

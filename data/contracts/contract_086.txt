@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Cobalt Logistics ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+The total annual fees for the Services are USD 18,280, covering 111 named users.
+
+2. Payment Terms
+Invoices are payable net 30 days from receipt. Late amounts accrue interest at 1% per month.
+
+3. Renewal
+The subscription will automatically renew for 12 months unless cancelled at least 30 days before the renewal date.
+
+4. Termination
+This Agreement may be terminated by either party upon insolvency of the other or uncured material breach.
+
+5. Warranties
+Vendor shall use commercially reasonable efforts to make the Services available 99.5% of the time, excluding scheduled maintenance.
+
+6. Limitation of Liability
+The total cumulative liability of either party arising out of this Agreement shall be limited to one times (1x) the annual fees.
+
+7. Indemnification
+Vendor shall defend Customer against third-party claims alleging that the Software infringes a patent or copyright, subject to the liability cap.
+
+8. Intellectual Property
+All intellectual property rights in the platform remain with Vendor. Customer owns its Customer Data.
+
+9. Confidentiality
+Each party shall protect the other's Confidential Information with reasonable care for a period of three (3) years following disclosure.
+
+10. Data Protection
+Each party shall comply with applicable data protection law. Vendor shall notify Customer of any personal data breach without undue delay.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Customer may assign this Agreement freely to any third party. Vendor may not assign or subcontract any obligation without consent.
+
+13. Governing Law
+This Agreement is governed by the laws of India and the courts at New Delhi shall have exclusive jurisdiction.
+
+14. General
+This Agreement constitutes the entire agreement between the parties and supersedes all prior understandings.

@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Saffron Analytics ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+Customer shall pay Vendor an annual subscription fee of USD 46,200 for 140 user seats.
+
+2. Payment Terms
+Fees are invoiced annually in advance and are due within 30 days of the date of invoice.
+
+3. Renewal
+This Agreement renews for successive one-year terms unless either party gives thirty (30) days' notice of non-renewal.
+
+4. Termination
+Customer may terminate this Agreement for convenience at any time on seven (7) days' notice, and Vendor shall refund all prepaid fees in full.
+
+5. Warranties
+Vendor warrants that the Services will perform materially in accordance with the Documentation. The sole remedy for breach is re-performance or a pro-rata refund.
+
+6. Limitation of Liability
+Vendor's aggregate liability shall not exceed ten (10) times the total contract value, and the exclusion of consequential damages shall apply only to Customer.
+
+7. Indemnification
+Each party shall indemnify the other against third-party claims to the extent arising from its own gross negligence or wilful misconduct.
+
+8. Intellectual Property
+All intellectual property rights in the platform remain with Vendor. Customer owns its Customer Data.
+
+9. Confidentiality
+Confidentiality obligations shall bind Vendor only and shall survive indefinitely.
+
+10. Data Protection
+Vendor shall process personal data only on documented instructions and implement appropriate technical and organisational measures in line with the DPDP Act, 2023.
+
+11. Non-Solicitation
+During the Term, neither party shall knowingly solicit for employment the other party's employees directly involved in the Services.
+
+12. Assignment
+Neither party may assign this Agreement without the other's prior written consent, except to a successor in a merger or acquisition.
+
+13. Governing Law
+Disputes shall be finally settled under the rules of the Singapore International Arbitration Centre, seated in Singapore.
+
+14. General
+Notices shall be in writing and delivered by email to the addresses set out above.

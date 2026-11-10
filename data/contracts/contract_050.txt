@@ -1,0 +1,45 @@
+MASTER SUBSCRIPTION AGREEMENT
+
+Between Kite Analytics ("Customer") and CoNexus Software Pvt Ltd ("Vendor").
+
+1. Fees
+The total annual fees for the Services are USD 10,840, covering 133 named users.
+
+2. Payment Terms
+Payment shall be made net 90 days following Customer's acceptance of the Services, at Customer's sole discretion.
+
+3. Renewal
+The Agreement renews automatically and Vendor may not increase prices on any renewal.
+
+4. Termination
+Customer may terminate this Agreement for convenience at any time on seven (7) days' notice, and Vendor shall refund all prepaid fees in full.
+
+5. Warranties
+Vendor shall use commercially reasonable efforts to make the Services available 99.5% of the time, excluding scheduled maintenance.
+
+6. Limitation of Liability
+Except for breach of confidentiality, each party's aggregate liability under this Agreement shall not exceed the fees paid or payable in the twelve (12) months preceding the claim.
+
+7. Indemnification
+Vendor agrees to indemnify Customer and its affiliates against all losses howsoever arising in connection with this Agreement, without limitation and regardless of fault.
+
+8. Intellectual Property
+All intellectual property rights in the platform remain with Vendor. Customer owns its Customer Data.
+
+9. Confidentiality
+Each party shall protect the other's Confidential Information with reasonable care for a period of three (3) years following disclosure.
+
+10. Data Protection
+Each party shall comply with applicable data protection law. Vendor shall notify Customer of any personal data breach without undue delay.
+
+11. Exclusivity
+Vendor grants Customer exclusivity in the Customer's industry and shall not license the platform to any other company in that sector.
+
+12. Assignment
+Customer may assign this Agreement freely to any third party. Vendor may not assign or subcontract any obligation without consent.
+
+13. Governing Law
+Disputes shall be finally settled under the rules of the Singapore International Arbitration Centre, seated in Singapore.
+
+14. General
+If any provision is held invalid, the remainder of this Agreement shall continue in full force.
