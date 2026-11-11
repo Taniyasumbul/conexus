@@ -292,3 +292,29 @@ def test_no_links_exposed_without_dev_flag(app, monkeypatch):
 def test_signup_blocked_before_first_admin(tmp_path):
     app = create_app(get_settings(llm_provider="offline"), tmp_path / "s.db", tmp_path / "a.jsonl", labels_export=tmp_path / "e.jsonl")
     assert TestClient(app).post("/api/auth/signup", json={"name": "A", "email": "a@x.io", "password": PW}).status_code == 409
+
+
+def test_notifications_follow_stage_changes(app):
+    legal = login(app, "legal@x.io")
+    sales = login(app, "sales@x.io")
+    r = _sample(lambda r: any(c["requires_human"] and not c["redlinable"] for c in r["clauses"]))
+    cid = _create(sales, r)["id"]
+    sales.post(f"/api/contracts/{cid}/negotiate", json={"mode": "simulated", "delay_s": 0})
+    ln = legal.get("/api/notifications").json()
+    assert ln["unread"] >= 1 and ln["items"][0]["kind"] == "escalation" and ln["items"][0]["link"] == f"/contracts/{cid}"
+    assert all(i["kind"] != "escalation" for i in sales.get("/api/notifications").json()["items"])  # Legal-only
+    legal.post(f"/api/contracts/{cid}/decision", json={"approve": False, "note": "no"})
+    kinds = [i["kind"] for i in sales.get("/api/notifications").json()["items"]]
+    assert "closed" in kinds  # everyone hears the outcome
+    legal.post("/api/notifications/read", json={"all": True})
+    assert legal.get("/api/notifications").json()["unread"] == 0
+
+
+def test_analytics_shape(client):
+    r = _sample(lambda r: not r["should_escalate"] and r["context"]["list_price"] < 50_000)
+    cid = _create(client, r)["id"]
+    client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "simulated", "wtp": r["hidden"]["wtp"], "delay_s": 0})
+    a = client.get("/api/analytics").json()
+    assert len(a["days"]) == 14 and a["totals"]["contracts"] == 1
+    assert sum(d["analyzed"] for d in a["days"]) == 1
+    assert len(a["rounds"]) == 8

@@ -125,6 +125,9 @@ export const api = {
   annotateNext: () => req<AnnotateItem>("GET", "/api/annotate/next"),
   annotate: (a: AnnotationInput) => req<AnnotateReveal>("POST", "/api/annotate", a),
   annotateStats: () => req<AnnotateStats>("GET", "/api/annotate/stats"),
+  analytics: () => req<any>("GET", "/api/analytics"),
+  notifications: () => req<{ unread: number; items: { id: number; kind: string; title: string; body: string; link: string | null; created_at: number; read: boolean }[] }>("GET", "/api/notifications"),
+  readNotifications: (b: { ids?: number[]; all?: boolean }) => req<{ ok: boolean }>("POST", "/api/notifications/read", b),
   outbox: () => req<{ to: string; subject: string; body: string; ts: number }[]>("GET", "/api/outbox"),
 };
 

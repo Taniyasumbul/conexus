@@ -15,6 +15,8 @@ services:
         value: "1"            # one-click "Try the demo" account (Legal role, sample deals)
       - key: CONEXUS_SIGNUP
         value: "1"            # self sign-up with e-mail verification (Sales role)
+      - key: DATABASE_URL
+        sync: false           # Postgres URL (Neon / Supabase free tier). Without it data resets on every deploy
       - key: CONEXUS_PUBLIC_URL
         sync: false           # e.g. https://conexus.onrender.com (used in e-mailed links)
       - key: SMTP_HOST

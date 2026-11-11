@@ -16,4 +16,5 @@ export * from "./overlay";
 export * from "./charts";
 export * from "./motion";
 export * from "./document";
+export * from "./notifications";
 export { AppShell, Logo } from "./AppShell";

@@ -78,6 +78,11 @@ class SetupRequest(LoginRequest):
     name: str = Field(min_length=1, max_length=80)
 
 
+class ReadRequest(BaseModel):
+    ids: list[int] = []
+    all: bool = False
+
+
 class EmailRequest(BaseModel):
     email: str = Field(min_length=3, max_length=200)
 
@@ -168,13 +173,15 @@ def _email_channel() -> Channel:
 def create_app(settings: Settings | None = None, db_path: Path | None = None, audit_path: Path | None = None,
                labels_export: Path | None = None) -> FastAPI:
     s = (settings or get_settings()).model_copy(deep=True)
-    store = Store(db_path or RUNS / "conexus.db")
+    # DATABASE_URL (Postgres) keeps data across restarts on hosts with ephemeral disks, e.g. Render free
+    database_url = os.getenv("DATABASE_URL") if db_path is None else None
+    store = Store(db_path or RUNS / "conexus.db", url=database_url)
     seed_admin_from_env(store)
     saved_policy = store.kv_get("policy")
     if saved_policy:
         p = json.loads(saved_policy)
         apply_policy(s, p.get("escalation", {}), p.get("pricing", {}))
-    audit = AuditAgent(audit_path or RUNS / "audit.jsonl")
+    audit = AuditAgent(sink=store) if store.backend == "postgres" else AuditAgent(audit_path or RUNS / "audit.jsonl")
     llm = build_llm(s)
     escalations = _escalation_channel()
     clf = RiskClassifier.default(s)
@@ -219,6 +226,36 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
 
     # ------------------------------------------------------------------ routes
     sales, legal, admin = require("sales"), require("legal"), require("admin")
+
+    # ------------------------------------------------------------------ notifications on stage changes
+    COVER = {"sales": ("sales",), "legal": ("sales", "legal"), "admin": ("sales", "legal", "admin")}
+    _raw_save = store.save
+
+    def _money(v: float) -> str:
+        return f"${v:,.0f}"
+
+    def save_and_notify(st: NegotiationState, **kw) -> None:
+        prev = store.row(st.contract_id)
+        prev_status = prev["status"] if prev else None
+        _raw_save(st, **kw)
+        if prev_status == st.status:
+            return
+        who, link = st.context.customer, f"/contracts/{st.contract_id}"
+        if st.status == "awaiting_human" and st.escalation:
+            store.notify("escalation", f"{who} needs a decision", st.escalation.triggers[0] if st.escalation.triggers else st.escalation.kind,
+                         link, role="legal")
+        elif st.status == "signed" and st.outcome and st.outcome.final_terms:
+            t = st.outcome.final_terms
+            store.notify("signed", f"Deal signed with {who}", f"{_money(t.price)}/yr · net {t.payment_days} · {st.outcome.rounds} rounds", link)
+        elif st.status == "closed" and st.outcome:
+            label = {"rejected_by_human": "rejected by Legal", "walked_away": "customer walked away",
+                     "no_agreement": "no agreement", "handed_off": "handed to a person"}.get(st.outcome.status, st.outcome.status)
+            store.notify("closed", f"{who}: {label}", f"Closed after {st.outcome.rounds} rounds", link)
+        elif prev_status == "awaiting_human" and st.status == "awaiting_reply" and st.human_decisions:
+            d = st.human_decisions[-1]
+            store.notify("approved", f"{d.reviewer} approved {who}", d.note or "The agents resumed the negotiation", link)
+
+    store.save = save_and_notify  # every state change goes through here
     DEMO_EMAIL = "demo@conexus.local"
     demo_enabled = os.getenv("CONEXUS_DEMO", "0").lower() in ("1", "true", "yes")
 
@@ -599,7 +636,7 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
 
     @app.get("/api/audit/verify")
     def verify(user=Depends(sales)):
-        ok, msg = AuditAgent.verify(audit.path) if audit.path.exists() else (True, "empty log")
+        ok, msg = audit.verify_stored()
         return {"ok": ok, "message": msg, "events": len(audit.events), "head": audit.head}
 
     @app.get("/api/metrics")
@@ -662,6 +699,79 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
     def annotate_stats(user=Depends(legal)):
         _need_cuad()
         return annotations.stats()
+
+    # ------------------------------------------------------------------ notifications
+    @app.get("/api/notifications")
+    def notifications(user=Depends(sales)):
+        rows = store.notifications_for(user["id"], COVER[user["role"]])
+        items = [{"id": r["id"], "kind": r["kind"], "title": r["title"], "body": r["body"], "link": r["link"],
+                  "created_at": r["created_at"], "read": bool(r["is_read"])} for r in rows]
+        return {"unread": sum(not i["read"] for i in items), "items": items}
+
+    @app.post("/api/notifications/read")
+    def notifications_read(req: ReadRequest, user=Depends(sales)):
+        ids = req.ids
+        if req.all:
+            ids = [r["id"] for r in store.notifications_for(user["id"], COVER[user["role"]], limit=500)]
+        store.mark_read(user["id"], ids)
+        return {"ok": True}
+
+    # ------------------------------------------------------------------ analytics
+    @app.get("/api/analytics")
+    def analytics(days: int = 14, user=Depends(sales)):
+        rows = store.all()
+        states = [(r, NegotiationState.model_validate_json(r["state_json"])) for r in rows]
+        now = time.time()
+        day0 = int(now // 86400) - (days - 1)
+        series = [{"day": time.strftime("%d %b", time.gmtime((day0 + i) * 86400)), "analyzed": 0, "signed": 0, "value": 0.0, "escalated": 0}
+                  for i in range(days)]
+
+        def bucket(ts: float):
+            i = int(ts // 86400) - day0
+            return series[i] if 0 <= i < days else None
+
+        signed = []
+        for r, st in states:
+            if (b := bucket(r["created_at"])):
+                b["analyzed"] += 1
+            if st.status == "signed" and st.outcome and st.outcome.final_terms:
+                signed.append((r, st))
+                if (b := bucket(r["updated_at"])):
+                    b["signed"] += 1
+                    b["value"] += st.outcome.final_terms.price
+        by_kind: dict[str, int] = defaultdict(int)
+        for e in audit.events:
+            if e["action"] == "ESCALATE":
+                by_kind[(e.get("data") or {}).get("kind", "other")] += 1
+                if (b := bucket(e["ts"])):
+                    b["escalated"] += 1
+        decisions = {"approved": 0, "rejected": 0}
+        for _, st in states:
+            for d in st.human_decisions:
+                decisions["approved" if d.approve else "rejected"] += 1
+        close_minutes = sorted((r["updated_at"] - r["created_at"]) / 60 for r, _ in signed)
+        rounds: dict[int, int] = defaultdict(int)
+        segment: dict[str, dict] = defaultdict(lambda: {"deals": 0, "value": 0.0})
+        for _, st in signed:
+            rounds[st.outcome.rounds] += 1
+            seg = segment[st.context.segment]
+            seg["deals"] += 1
+            seg["value"] += st.outcome.final_terms.price
+        discounts = [{"customer": st.context.customer, "discount": round(1 - st.outcome.final_terms.price / st.context.list_price, 3),
+                      "price": st.outcome.final_terms.price} for _, st in signed]
+        return {
+            "days": series,
+            "escalations_by_kind": [{"kind": k, "count": v} for k, v in sorted(by_kind.items(), key=lambda kv: -kv[1])],
+            "decisions": decisions,
+            "time_to_close_minutes": {"median": round(close_minutes[len(close_minutes) // 2], 1) if close_minutes else None,
+                                      "fastest": round(close_minutes[0], 1) if close_minutes else None,
+                                      "slowest": round(close_minutes[-1], 1) if close_minutes else None},
+            "rounds": [{"rounds": k, "deals": rounds[k]} for k in range(1, 9)],
+            "by_segment": [{"segment": k, **v} for k, v in sorted(segment.items(), key=lambda kv: -kv[1]["value"])],
+            "discounts": sorted(discounts, key=lambda d: -d["discount"]),
+            "totals": {"contracts": len(states), "signed": len(signed), "value": round(sum(st.outcome.final_terms.price for _, st in signed), 2),
+                       "escalations": sum(by_kind.values())},
+        }
 
     @app.get("/api/outbox")
     def outbox(limit: int = 20, user=Depends(sales)):
