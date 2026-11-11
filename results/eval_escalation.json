@@ -1,0 +1,161 @@
+{
+  "clause_level": {
+    "rules": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 82,
+      "fp": 0,
+      "fn": 0,
+      "tn": 230
+    },
+    "ml": {
+      "precision": 0.464,
+      "recall": 0.159,
+      "f1": 0.236,
+      "tp": 13,
+      "fp": 15,
+      "fn": 69,
+      "tn": 215
+    },
+    "hybrid": {
+      "precision": 0.863,
+      "recall": 1.0,
+      "f1": 0.927,
+      "tp": 82,
+      "fp": 13,
+      "fn": 0,
+      "tn": 217
+    }
+  },
+  "hybrid_threshold_sweep_scores_only": [
+    {
+      "threshold": 0.1,
+      "precision": 0.268,
+      "recall": 1.0,
+      "f1": 0.423,
+      "tp": 82,
+      "fp": 224,
+      "fn": 0,
+      "tn": 6
+    },
+    {
+      "threshold": 0.2,
+      "precision": 0.324,
+      "recall": 1.0,
+      "f1": 0.49,
+      "tp": 82,
+      "fp": 171,
+      "fn": 0,
+      "tn": 59
+    },
+    {
+      "threshold": 0.3,
+      "precision": 0.463,
+      "recall": 1.0,
+      "f1": 0.633,
+      "tp": 82,
+      "fp": 95,
+      "fn": 0,
+      "tn": 135
+    },
+    {
+      "threshold": 0.4,
+      "precision": 0.577,
+      "recall": 1.0,
+      "f1": 0.732,
+      "tp": 82,
+      "fp": 60,
+      "fn": 0,
+      "tn": 170
+    },
+    {
+      "threshold": 0.5,
+      "precision": 0.863,
+      "recall": 1.0,
+      "f1": 0.927,
+      "tp": 82,
+      "fp": 13,
+      "fn": 0,
+      "tn": 217
+    },
+    {
+      "threshold": 0.6,
+      "precision": 0.891,
+      "recall": 1.0,
+      "f1": 0.943,
+      "tp": 82,
+      "fp": 10,
+      "fn": 0,
+      "tn": 220
+    },
+    {
+      "threshold": 0.7,
+      "precision": 0.921,
+      "recall": 1.0,
+      "f1": 0.959,
+      "tp": 82,
+      "fp": 7,
+      "fn": 0,
+      "tn": 223
+    },
+    {
+      "threshold": 0.8,
+      "precision": 0.988,
+      "recall": 1.0,
+      "f1": 0.994,
+      "tp": 82,
+      "fp": 1,
+      "fn": 0,
+      "tn": 229
+    },
+    {
+      "threshold": 0.9,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 82,
+      "fp": 0,
+      "fn": 0,
+      "tn": 230
+    }
+  ],
+  "n_clauses": 312,
+  "contract_level": {
+    "rules": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 69,
+      "fp": 0,
+      "fn": 0,
+      "tn": 131,
+      "immediate_escalations": 61,
+      "analyst_type_accuracy": 1.0
+    },
+    "ml": {
+      "precision": 0.299,
+      "recall": 0.812,
+      "f1": 0.438,
+      "tp": 56,
+      "fp": 131,
+      "fn": 13,
+      "tn": 0,
+      "immediate_escalations": 187,
+      "analyst_type_accuracy": 1.0
+    },
+    "hybrid": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 69,
+      "fp": 0,
+      "fn": 0,
+      "tn": 131,
+      "immediate_escalations": 61,
+      "analyst_type_accuracy": 1.0
+    }
+  },
+  "n_contracts": 200,
+  "positives": 69
+}

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -29,6 +30,7 @@ class AuditAgent:
         self.path = Path(path) if path else None
         self.events: list[dict] = []
         self.head = GENESIS
+        self._lock = threading.Lock()
         if self.path:
             self.path.parent.mkdir(parents=True, exist_ok=True)
             if self.path.exists():
@@ -41,6 +43,10 @@ class AuditAgent:
     def log(self, agent: str, action: str, rationale: str, data: Any = None, contract_id: str | None = None) -> None:
         if not self.enabled:
             return
+        with self._lock:
+            self._append(agent, action, rationale, data, contract_id)
+
+    def _append(self, agent, action, rationale, data, contract_id) -> None:
         event = {
             "seq": len(self.events),
             "ts": time.time(),

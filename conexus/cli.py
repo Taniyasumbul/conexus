@@ -156,6 +156,94 @@ def eval_negotiation(with_llm: bool = False, llm_limit: int = 20, seed: int = 0)
     con.print(f"saved {out}")
 
 
+@app.command("fetch-cuad")
+def fetch_cuad(url: str = "https://github.com/TheAtticusProject/cuad/raw/main/data.zip"):
+    """Download CUAD v1 (CC BY 4.0) and build data/cuad/clauses.jsonl."""
+    import io
+    import urllib.request
+    import zipfile
+
+    from .datasets.cuad import build
+
+    raw_dir = DATA / "external" / "cuad_raw"
+    raw = raw_dir / "CUADv1.json"
+    if not raw.exists():
+        con.print(f"Downloading {url} ...")
+        with urllib.request.urlopen(url, timeout=300) as r:
+            blob = r.read()
+        raw_dir.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(io.BytesIO(blob)) as z:
+            raw.write_bytes(z.read("CUADv1.json"))  # extract only the file we need, by name
+    stats = build(raw, DATA / "cuad" / "clauses.jsonl")
+    con.print(stats)
+
+
+@app.command("eval-cuad")
+def eval_cuad(with_llm: bool = False, llm_limit: int = 60):
+    """RO2 on real contract text (CUAD): rules vs ML vs hybrid, plus clause-type accuracy."""
+    from .evaluation.cuad_eval import run
+
+    s = get_settings()
+    res = run(s, build_llm(s) if with_llm else None, llm_limit=llm_limit)
+    _table([{"mode": k, **v} for k, v in res["results"].items()],
+           f"CUAD dev, 5-fold CV (n={res['n_clauses']} clauses, {res['n_contracts']} contracts, "
+           f"{res['positives']} positive, {res['expert_labelled']} expert-labelled)")
+    _table([{"mode": k, **v} for k, v in res["held_out_test"].items()],
+           f"Held-out TEST contracts (n={res['n_test_clauses']} clauses, {res['n_test_contracts']} contracts) - report once")
+    _table(res["recall_by_category"], "Recall on deal-breaker categories")
+    con.print(f"Analyst clause-type accuracy (no headings): {res['analyst_type_accuracy']}")
+    out = RUNS / "eval_cuad.json"
+    RUNS.mkdir(exist_ok=True)
+    out.write_text(json.dumps(res, indent=2))
+    con.print(f"saved {out}")
+
+
+@app.command("eval-llm")
+def eval_llm(risk_sample: int = 60, negotiation_contracts: int = 10, skip_negotiation: bool = False):
+    """LLM experiments: reply-parsing robustness, risk on held-out CUAD, single-LLM vs CoNexus.
+    Uses CONEXUS_LLM (anthropic or ollama). Every call is local with ollama; with anthropic it is billed."""
+    from .evaluation.cuad_eval import run as run_cuad
+    from .evaluation.llm_eval import parsing_robustness
+    from .evaluation.negotiation_eval import _run_system, _summarise, _Orch
+    from .evaluation.baselines import SingleLLMNegotiator
+    from .evaluation.escalation_eval import load_contracts
+
+    s = get_settings()
+    llm = build_llm(s)
+    if llm is None:
+        raise typer.BadParameter("Set CONEXUS_LLM=ollama (local) or anthropic in .env first")
+    out: dict = {"model": llm.name}
+
+    con.rule(f"1/3 Reply parsing robustness ({llm.name})")
+    pr = parsing_robustness(llm)
+    out["parsing"] = pr
+    _table([{"parser": k, "overall": v["overall"], **v["by_style"], "s/msg": v["sec_per_message"]} for k, v in pr["results"].items()],
+           f"Messages parsed fully correctly (n={pr['n_messages']})")
+
+    con.rule("2/3 Risk scoring on held-out CUAD contracts")
+    cu = run_cuad(s, llm, llm_limit=risk_sample)
+    out["risk_held_out"] = {k: v for k, v in cu["held_out_test"].items() if "sample" in k}
+    _table([{"mode": k, **v} for k, v in out["risk_held_out"].items()], "Stratified sample of held-out test clauses")
+
+    if not skip_negotiation:
+        con.rule("3/3 Negotiation: single monolithic LLM vs CoNexus (+LLM comms)")
+        contracts = load_contracts()[:negotiation_contracts]
+        rows = []
+        for name, system in ((f"single_llm ({llm.name})", SingleLLMNegotiator(llm, s.pricing.max_discount, s.escalation.max_rounds)),
+                             (f"conexus + {llm.name}", _Orch("c", Orchestrator(s, llm))),
+                             ("conexus (offline)", _Orch("o", Orchestrator(s)))):
+            outs, times = _run_system(system, contracts, 0)
+            rows.append(_summarise(name, contracts, outs, times))
+        out["negotiation"] = rows
+        _table([{k: r[k] for k in ("system", "agreement_rate", "escalation_rate", "surplus_share", "unreviewed_risky_clauses_signed", "runtime_ms_per_contract")} for r in rows],
+               f"First {len(contracts)} contracts, rule-based buyers")
+
+    path = RUNS / "eval_llm.json"
+    RUNS.mkdir(exist_ok=True)
+    path.write_text(json.dumps(out, indent=2, default=str))
+    con.print(f"saved {path}")
+
+
 @app.command("verify-audit")
 def verify_audit(path: Path):
     """Check that an audit log's hash chain is intact."""

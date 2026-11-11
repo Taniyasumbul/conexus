@@ -55,6 +55,20 @@ RULES = [
     Rule(ClauseType.ASSIGNMENT, r"may assign this agreement freely", M, False, True, "One-sided assignment right"),
 ]
 
+# Safe-harbour rules: wording that clearly favours (or is neutral to) the vendor.
+# The ML model is trained on direction-blind labels (CUAD does not record which
+# party a clause binds), so when one of these matches and no hard rule fires,
+# the ML score is capped below the escalation threshold.
+SAFE_HARBOURS: list[tuple[ClauseType | None, re.Pattern, str]] = [
+    (ClauseType.IP_OWNERSHIP, re.compile(r"\b(vendor|licensor|provider|supplier|company)\b[^.]{0,40}\bretains?\b[^.]{0,30}\b(all )?(right|rights|title|ownership)", re.I),
+     "Vendor retains its intellectual property"),
+    (ClauseType.IP_OWNERSHIP, re.compile(r"\bremain(s)? with (the )?(vendor|licensor|provider)\b", re.I), "IP remains with the vendor"),
+    (ClauseType.LIABILITY_CAP, re.compile(r"each party'?s (aggregate |total )?liability[^.]{0,80}(shall not exceed|is capped|limited to)", re.I),
+     "Mutual liability cap"),
+    (ClauseType.NON_COMPETE, re.compile(r"neither party shall[^.]{0,30}solicit", re.I), "Mutual non-solicitation of employees"),
+]
+SAFE_CAP = 0.3
+
 REDLINES: dict[ClauseType, str] = {
     ClauseType.PAYMENT_TERMS: "Customer shall pay undisputed invoices within thirty (30) days of the invoice date.",
     ClauseType.LIABILITY_CAP: "Each party's aggregate liability shall not exceed the fees paid in the twelve (12) months preceding the claim; neither party is liable for indirect or consequential damages.",
@@ -105,6 +119,36 @@ class RiskClassifier:
         rows = [json.loads(l) for l in Path(path).read_text().splitlines() if l.strip()] if Path(path).exists() else []
         return cls().fit([r["text"] for r in rows], [r["requires_human"] for r in rows])
 
+    @classmethod
+    def default(cls, settings: Settings) -> "RiskClassifier":
+        """Deployable model: synthetic clause bank + real CUAD clauses (proxy labels),
+        with expert labels from the annotation tool overriding proxies."""
+        from ..config import DATA
+
+        texts, labels = [], []
+        syn = Path(settings.clause_labels_path)
+        if syn.exists():
+            for l in syn.read_text().splitlines():
+                if l.strip():
+                    r = json.loads(l)
+                    texts.append(r["text"]); labels.append(r["requires_human"])
+        cuad = DATA / "cuad" / "clauses.jsonl"
+        if cuad.exists():
+            from ..evaluation.cuad_eval import expert_labels
+
+            from ..datasets.cuad import split_of
+
+            experts = expert_labels()
+            for l in cuad.read_text().splitlines():
+                if l.strip():
+                    r = json.loads(l)
+                    if split_of(r["contract"]) == "test":
+                        continue  # the held-out test contracts are never used for training
+                    y = experts.get(r["id"], r["proxy_human"])
+                    if y is not None:
+                        texts.append(r["text"]); labels.append(bool(y))
+        return cls().fit(texts, labels)
+
 
 class LegalRiskAgent:
     name = "legal_risk"
@@ -115,7 +159,7 @@ class LegalRiskAgent:
         self.s = settings
         self.llm = llm
         self.mode = mode
-        self.clf = classifier if classifier is not None else RiskClassifier.from_jsonl(settings.clause_labels_path)
+        self.clf = classifier if classifier is not None else RiskClassifier.default(settings)
 
     def apply_rules(self, clause: Clause) -> tuple[RiskLevel, bool, bool, list[str]]:
         level, hard, redl, reasons = RiskLevel.LOW, False, False, []
@@ -140,8 +184,10 @@ class LegalRiskAgent:
             score = rule_score
         elif self.mode == "ml":
             score, hard = ml, False
-        else:
+        elif self.s.escalation.combine == "weighted":
             score = (1 - w) * rule_score + w * ml
+        else:  # "max": any confident signal raises the alarm (safety-first)
+            score = max(rule_score, ml)
         source = self.mode
 
         if self.llm and self.mode in ("llm", "hybrid+llm"):
@@ -150,7 +196,8 @@ class LegalRiskAgent:
                     "You are a contracts lawyer advising a small software vendor with no in-house legal team. "
                     "Assess the risk of this customer-drafted clause to the VENDOR. requires_human=true only if the "
                     "clause creates exposure the vendor cannot price or reverse (uncapped liability, one-sided "
-                    "indemnity, loss of background IP, exclusivity, strict liability for data breaches, unlimited audits).",
+                    "indemnity, loss of background IP, exclusivity, strict liability for data breaches, unlimited audits). "
+                    "Give at most two reasons, each under 15 words.",
                     f"Clause type: {clause.type.value}\nClause: {clause.text}",
                     _LLMAssessment,
                 )
@@ -164,6 +211,12 @@ class LegalRiskAgent:
             except LLMError as e:
                 reasons.append(f"LLM unavailable ({e}); fell back to {self.mode.replace('+llm', '')}")
 
+        if not hard and self.mode in ("hybrid", "hybrid+llm"):
+            for t, rx, why in SAFE_HARBOURS:
+                if (t is None or t == clause.type) and rx.search(clause.text) and score > SAFE_CAP:
+                    score = SAFE_CAP
+                    reasons.append(f"Safe harbour: {why}")
+                    break
         requires_human = hard or score >= self.s.escalation.clause_threshold
         if score >= 0.5 and level == RiskLevel.LOW:
             level = RiskLevel.MEDIUM

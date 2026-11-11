@@ -1,0 +1,136 @@
+{
+  "n_clauses": 5566,
+  "n_contracts": 376,
+  "held_out_test": {
+    "rules": {
+      "precision": 0.472,
+      "recall": 0.077,
+      "f1": 0.133,
+      "tp": 17,
+      "fp": 19,
+      "fn": 203,
+      "tn": 1279
+    },
+    "ml (CUAD dev)": {
+      "precision": 0.67,
+      "recall": 0.85,
+      "f1": 0.749,
+      "tp": 187,
+      "fp": 92,
+      "fn": 33,
+      "tn": 1206
+    },
+    "hybrid (CUAD dev)": {
+      "precision": 0.647,
+      "recall": 0.859,
+      "f1": 0.738,
+      "tp": 189,
+      "fp": 103,
+      "fn": 31,
+      "tn": 1195
+    }
+  },
+  "n_test_clauses": 1518,
+  "n_test_contracts": 99,
+  "positives": 905,
+  "expert_labelled": 0,
+  "results": {
+    "rules": {
+      "precision": 0.479,
+      "recall": 0.074,
+      "f1": 0.128,
+      "tp": 67,
+      "fp": 73,
+      "fn": 838,
+      "tn": 4588
+    },
+    "ml (synthetic)": {
+      "precision": 0.41,
+      "recall": 0.242,
+      "f1": 0.304,
+      "tp": 219,
+      "fp": 315,
+      "fn": 686,
+      "tn": 4346
+    },
+    "ml (CUAD, CV)": {
+      "precision": 0.692,
+      "recall": 0.791,
+      "f1": 0.739,
+      "tp": 716,
+      "fp": 318,
+      "fn": 189,
+      "tn": 4343
+    },
+    "hybrid (synthetic)": {
+      "precision": 0.417,
+      "recall": 0.29,
+      "f1": 0.342,
+      "tp": 262,
+      "fp": 366,
+      "fn": 643,
+      "tn": 4295
+    },
+    "hybrid (CUAD, CV)": {
+      "precision": 0.665,
+      "recall": 0.797,
+      "f1": 0.725,
+      "tp": 721,
+      "fp": 363,
+      "fn": 184,
+      "tn": 4298
+    },
+    "ablation: hybrid (CUAD, CV), weighted average": {
+      "precision": 0.608,
+      "recall": 0.127,
+      "f1": 0.21,
+      "tp": 115,
+      "fp": 74,
+      "fn": 790,
+      "tn": 4587
+    }
+  },
+  "recall_by_category": [
+    {
+      "category": "Exclusivity",
+      "n": 295,
+      "rules_recall": 0.071,
+      "hybrid_cuad_recall": 0.79
+    },
+    {
+      "category": "Ip Ownership Assignment",
+      "n": 259,
+      "rules_recall": 0.108,
+      "hybrid_cuad_recall": 0.842
+    },
+    {
+      "category": "Non-Compete",
+      "n": 230,
+      "rules_recall": 0.026,
+      "hybrid_cuad_recall": 0.783
+    },
+    {
+      "category": "Uncapped Liability",
+      "n": 121,
+      "rules_recall": 0.099,
+      "hybrid_cuad_recall": 0.744
+    }
+  ],
+  "analyst_type_accuracy": {
+    "keywords": 0.411,
+    "learned (CV)": 0.645
+  },
+  "analyst_type_accuracy_by_type": {
+    "assignment": 0.313,
+    "auto_renewal": 0.709,
+    "data_protection": 0.81,
+    "governing_law": 0.983,
+    "ip_ownership": 0.597,
+    "liability_cap": 0.796,
+    "non_compete": 0.755,
+    "other": 0.487,
+    "price": 0.535,
+    "termination": 0.797,
+    "warranty": 0.61
+  }
+}

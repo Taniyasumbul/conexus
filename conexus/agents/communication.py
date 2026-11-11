@@ -56,22 +56,41 @@ class CommunicationAgent:
         if self.llm:
             try:
                 p = self.llm.structured(
-                    "Extract the counterparty's negotiation position from this email. price is the total annual "
-                    "price they propose (null if none). accepted_redlines/rejected_redlines are clause ids like 'c4'. "
-                    "accept=true only if they explicitly accept our latest offer. new_legal_terms=true if they "
-                    "introduce new legal obligations (exclusivity, indemnity, IP, audit, etc.).",
+                    "Extract the counterparty's negotiation position from this email.\n"
+                    "- price: the total annual price they propose or accept, as a plain number in USD. Convert shorthand "
+                    "and words: '18.5k' = 18500, 'twenty-one thousand' = 21000, 'USD 15,000' = 15000. null if no price.\n"
+                    "- payment_days: integer days from phrases like 'net 45', '45-day terms', 'within 45 days', "
+                    "'45 days credit period'. null if not mentioned.\n"
+                    "- accepted_redlines / rejected_redlines: clause ids from the pending list. 'clause 6', 'section 6', "
+                    "'point 6' and 'c6' all mean c6. Approval words (fine, agreed, works, okay) mean accepted; "
+                    "refusals (no, push back, not acceptable, will not move) mean rejected.\n"
+                    "- accept: true only if they agree to close the deal on the terms on the table.\n"
+                    "- walk_away: true only if they end the negotiation.\n"
+                    "- new_legal_terms: true if they introduce new legal obligations (exclusivity, indemnity, IP, audit).",
                     f"Pending clause ids: {pending_redlines}\n\nEmail:\n{message}",
                     _ParsedReply,
                 )
                 return Offer(
                     round=rnd, sender="them", message=message, accept=p.accept, walk_away=p.walk_away,
                     terms=Terms(price=p.price, payment_days=p.payment_days or 30) if p.price else None,
-                    redline_responses={**{c: True for c in p.accepted_redlines}, **{c: False for c in p.rejected_redlines}},
+                    redline_responses=self._grounded({**{c: True for c in p.accepted_redlines}, **{c: False for c in p.rejected_redlines}},
+                                                     message, pending_redlines),
                     new_legal_terms=p.new_legal_terms,
                 )
             except LLMError:
                 pass
         return self._regex_parse(message, rnd, pending_redlines)
+
+    @staticmethod
+    def _grounded(responses: dict[str, bool], message: str, pending: list[str]) -> dict[str, bool]:
+        """Keep a clause response only if it is a pending redline AND its number appears in the
+        message: removes answers the model invented for clauses the customer never mentioned."""
+        out = {}
+        for cid, ok in responses.items():
+            num = cid.lstrip("cC")
+            if cid in pending and re.search(rf"(?<![\d.]){re.escape(num)}(?![\d])", message):
+                out[cid] = ok
+        return out
 
     @staticmethod
     def _regex_parse(message: str, rnd: int, pending: list[str]) -> Offer:

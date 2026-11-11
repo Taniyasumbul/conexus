@@ -30,7 +30,9 @@ _load_dotenv()
 class EscalationPolicyConfig(BaseModel):
     # clause-level: hybrid score threshold above which a clause needs a human
     clause_threshold: float = 0.5
-    # weight of ML probability vs rule score in the hybrid score
+    # how the hybrid combines rule and ML scores: "max" (either signal can escalate)
+    # or "weighted" (average with ml_weight; kept for the ablation)
+    combine: str = "max"
     ml_weight: float = 0.5
     # trajectory-level triggers
     max_rounds: int = 8

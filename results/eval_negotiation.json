@@ -1,0 +1,142 @@
+{
+  "table_a_end_to_end": [
+    {
+      "system": "conexus (full)",
+      "n": 200,
+      "agreement_rate": 0.485,
+      "escalation_rate": 0.43,
+      "avg_rounds_to_agree": 6.45,
+      "price_over_wtp": 0.931,
+      "surplus_share": 0.674,
+      "revenue_per_contract": 12419.6,
+      "risky_contracts_handled": 1.0,
+      "unreviewed_risky_clauses_signed": 0,
+      "est_days_to_outcome": 6.37,
+      "runtime_ms_per_contract": 3.91
+    },
+    {
+      "system": "ablation: no audit",
+      "n": 200,
+      "agreement_rate": 0.485,
+      "escalation_rate": 0.43,
+      "avg_rounds_to_agree": 6.45,
+      "price_over_wtp": 0.931,
+      "surplus_share": 0.674,
+      "revenue_per_contract": 12419.6,
+      "risky_contracts_handled": 1.0,
+      "unreviewed_risky_clauses_signed": 0,
+      "est_days_to_outcome": 6.37,
+      "runtime_ms_per_contract": 3.29
+    },
+    {
+      "system": "ablation: no memory",
+      "n": 200,
+      "agreement_rate": 0.515,
+      "escalation_rate": 0.415,
+      "avg_rounds_to_agree": 5.64,
+      "price_over_wtp": 0.908,
+      "surplus_share": 0.604,
+      "revenue_per_contract": 14540.9,
+      "risky_contracts_handled": 1.0,
+      "unreviewed_risky_clauses_signed": 0,
+      "est_days_to_outcome": 5.86,
+      "runtime_ms_per_contract": 2.73
+    },
+    {
+      "system": "ablation: no risk gate",
+      "n": 200,
+      "agreement_rate": 0.86,
+      "escalation_rate": 0.0,
+      "avg_rounds_to_agree": 6.51,
+      "price_over_wtp": 0.925,
+      "surplus_share": 0.656,
+      "revenue_per_contract": 42668.0,
+      "risky_contracts_handled": 0.159,
+      "unreviewed_risky_clauses_signed": 82,
+      "est_days_to_outcome": 6.69,
+      "runtime_ms_per_contract": 3.69
+    },
+    {
+      "system": "rule_based",
+      "n": 200,
+      "agreement_rate": 0.88,
+      "escalation_rate": 0.0,
+      "avg_rounds_to_agree": 4.64,
+      "price_over_wtp": 0.873,
+      "surplus_share": 0.45,
+      "revenue_per_contract": 38814.9,
+      "risky_contracts_handled": 0.145,
+      "unreviewed_risky_clauses_signed": 84,
+      "est_days_to_outcome": 5.04,
+      "runtime_ms_per_contract": 0.25
+    },
+    {
+      "system": "human-only (modelled)",
+      "n": 200,
+      "agreement_rate": 0.88,
+      "escalation_rate": 0.0,
+      "avg_rounds_to_agree": 4.64,
+      "price_over_wtp": 0.873,
+      "surplus_share": 0.45,
+      "revenue_per_contract": 38814.9,
+      "risky_contracts_handled": 1.0,
+      "unreviewed_risky_clauses_signed": 0,
+      "est_days_to_outcome": 15.07,
+      "runtime_ms_per_contract": null
+    }
+  ],
+  "table_b_negotiation_only": [
+    {
+      "system": "memory (CoNexus pricing)",
+      "n": 180,
+      "agreement_rate": 0.956,
+      "escalation_rate": 0.0,
+      "avg_rounds_to_agree": 6.51,
+      "price_over_wtp": 0.925,
+      "surplus_share": 0.656,
+      "revenue_per_contract": 47408.9,
+      "risky_contracts_handled": 0.049,
+      "unreviewed_risky_clauses_signed": 82,
+      "est_days_to_outcome": 6.56,
+      "runtime_ms_per_contract": 3.66
+    },
+    {
+      "system": "no memory (cold start)",
+      "n": 180,
+      "agreement_rate": 0.978,
+      "escalation_rate": 0.0,
+      "avg_rounds_to_agree": 5.68,
+      "price_over_wtp": 0.902,
+      "surplus_share": 0.576,
+      "revenue_per_contract": 44537.6,
+      "risky_contracts_handled": 0.033,
+      "unreviewed_risky_clauses_signed": 84,
+      "est_days_to_outcome": 5.73,
+      "runtime_ms_per_contract": 2.79
+    },
+    {
+      "system": "rule_based",
+      "n": 180,
+      "agreement_rate": 0.978,
+      "escalation_rate": 0.0,
+      "avg_rounds_to_agree": 4.64,
+      "price_over_wtp": 0.873,
+      "surplus_share": 0.45,
+      "revenue_per_contract": 43127.6,
+      "risky_contracts_handled": 0.033,
+      "unreviewed_risky_clauses_signed": 84,
+      "est_days_to_outcome": 4.72,
+      "runtime_ms_per_contract": 0.25
+    }
+  ],
+  "n_contracts": 200,
+  "n_zopa": 180,
+  "time_model": {
+    "counterparty_reply_days_per_round": 1.0,
+    "agent_turn_days": 0.0,
+    "human_turn_days": 1.0,
+    "legal_review_days": 5.0
+  },
+  "audit_verification": "OK - chain intact, head=ca9e9ed00bc368aa...",
+  "audit_events": 2980
+}

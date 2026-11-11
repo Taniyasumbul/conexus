@@ -1,0 +1,19 @@
+# Render Blueprint: one Docker web service (FastAPI API + built React UI on one port).
+# Deploy: Render dashboard -> New -> Blueprint -> pick this repo.
+services:
+  - type: web
+    name: conexus
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: CONEXUS_LLM
+        value: offline        # set to "anthropic" + add ANTHROPIC_API_KEY to use Claude
+      - key: ANTHROPIC_API_KEY
+        sync: false           # secret: entered in the dashboard, never committed
+      - key: SLACK_WEBHOOK_URL
+        sync: false

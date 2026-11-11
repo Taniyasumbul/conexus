@@ -1,0 +1,9 @@
+services:
+  conexus:
+    build: .
+    environment:
+      CONEXUS_LLM: ${CONEXUS_LLM:-offline}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+    ports: ["8000:8000"]   # web app at http://localhost:8000, API docs at /docs
+    volumes: ["./runs:/app/runs"]

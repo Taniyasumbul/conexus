@@ -105,15 +105,26 @@ class Offer(BaseModel):
     new_legal_terms: bool = False
 
 
+EscalationKind = Literal["risky_clause", "redline_rejected", "new_legal_terms", "no_deal_high_value", "value_limit", "none"]
+
+
 class EscalationDecision(BaseModel):
     escalate: bool
     stage: Literal["pre_negotiation", "in_negotiation", "pre_signature", "none"] = "none"
+    kind: EscalationKind = "none"
     triggers: list[str] = []
     score: float = 0.0
+    clause_ids: list[str] = []
+
+
+class HumanDecision(BaseModel):
+    approve: bool
+    reviewer: str = "reviewer"
+    note: str = ""
 
 
 class Outcome(BaseModel):
-    status: Literal["agreed", "escalated", "walked_away", "no_agreement"]
+    status: Literal["agreed", "escalated", "walked_away", "no_agreement", "rejected_by_human", "handed_off"]
     final_terms: Terms | None = None
     rounds: int = 0
     escalation: EscalationDecision | None = None
@@ -122,15 +133,32 @@ class Outcome(BaseModel):
     envelope_id: str | None = None
 
 
+Status = Literal["analyzed", "awaiting_reply", "awaiting_human", "signed", "closed"]
+
+
 class NegotiationState(BaseModel):
-    """The shared blackboard that all agents coordinate through (RO1)."""
+    """The shared blackboard that all agents coordinate through (RO1).
+
+    It is also the persisted state of the Orchestrator's state machine, so a
+    negotiation can pause (waiting for an e-mail reply or a human decision)
+    and resume later from the database."""
     contract_id: str
     context: DealContext
+    status: Status = "analyzed"
     clauses: list[Clause] = []
     risks: list[ClauseRisk] = []
     opening_terms: Terms | None = None
     plan: PricingPlan | None = None
     similar_deals: list[DealRecord] = []
     history: list[Offer] = []
-    pending_redlines: list[str] = []
+    pending_redlines: list[str] = []      # all redlines we proposed
+    last_sent_redlines: list[str] = []    # redlines still open in the last message
+    redline_results: dict[str, bool] = {}
+    reviewed_clauses: list[str] = []      # cleared by a human reviewer
+    round: int = 0
+    their_last: Terms | None = None
+    last_our_offer: Terms | None = None
+    agreed_terms: Terms | None = None
+    escalation: EscalationDecision | None = None
+    human_decisions: list[HumanDecision] = []
     outcome: Outcome | None = None

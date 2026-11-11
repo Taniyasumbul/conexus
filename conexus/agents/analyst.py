@@ -1,7 +1,9 @@
 """Contract Analyst Agent: document -> typed clauses + the counterparty's opening terms."""
 from __future__ import annotations
 
+import json
 import re
+from functools import lru_cache
 
 from pydantic import BaseModel
 
@@ -70,17 +72,69 @@ def extract_price(text: str) -> float | None:
     return float(m.group(1).replace(",", "")) if m else None
 
 
+class TypeClassifier:
+    """TF-IDF + logistic regression over clause types, trained on real (CUAD) and
+    synthetic clauses. Used when the heading gives no hint and keywords are unsure."""
+
+    def __init__(self):
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.pipeline import make_pipeline
+
+        self.pipe = make_pipeline(TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True, min_df=2),
+                                  LogisticRegression(max_iter=3000, C=4.0))
+        self.fitted = False
+
+    def fit(self, texts: list[str], types: list[str]) -> "TypeClassifier":
+        if len(set(types)) > 1:
+            self.pipe.fit(texts, types)
+            self.fitted = True
+        return self
+
+    def predict(self, text: str) -> tuple[ClauseType, float]:
+        probs = self.pipe.predict_proba([text])[0]
+        i = probs.argmax()
+        return ClauseType(self.pipe.classes_[i]), float(probs[i])
+
+
+@lru_cache(maxsize=1)
+def default_type_classifier() -> TypeClassifier | None:
+    from ..config import DATA
+
+    from ..datasets.cuad import split_of
+
+    rows = []
+    for path in (DATA / "cuad" / "clauses.jsonl", DATA / "labels" / "clauses.jsonl"):
+        if path.exists():
+            rows += [r for r in (json.loads(l) for l in path.read_text().splitlines() if l.strip())
+                     if "contract" not in r or split_of(r["contract"]) == "dev"]  # never train on held-out test
+    if not rows:
+        return None
+    return TypeClassifier().fit([r["text"] for r in rows], [r["type"] for r in rows])
+
+
 class ContractAnalystAgent:
     name = "contract_analyst"
 
-    def __init__(self, llm: LLM | None = None, llm_threshold: float = 0.6):
+    def __init__(self, llm: LLM | None = None, llm_threshold: float = 0.6,
+                 type_classifier: TypeClassifier | None | bool = True):
         self.llm = llm
         self.llm_threshold = llm_threshold
+        # True = use the default trained classifier; False/None = keywords only
+        self.type_clf = default_type_classifier() if type_classifier is True else (type_classifier or None)
+
+    def classify(self, heading: str, body: str) -> tuple[ClauseType, float]:
+        ctype, conf = keyword_classify(heading, body)
+        if conf < self.llm_threshold and self.type_clf is not None and self.type_clf.fitted:
+            t2, p2 = self.type_clf.predict(body)
+            if p2 > conf:
+                ctype, conf = t2, p2
+        return ctype, conf
 
     def analyze(self, text: str) -> tuple[list[Clause], Terms | None]:
         clauses = []
         for i, (heading, body) in enumerate(split_sections(text)):
-            ctype, conf = keyword_classify(heading, body)
+            ctype, conf = self.classify(heading, body)
             if self.llm and conf < self.llm_threshold:
                 try:
                     r = self.llm.structured(
