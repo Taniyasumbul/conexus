@@ -76,6 +76,13 @@ decide in the **Escalation inbox** -> verify the **Audit ledger**.
   Word tracked change (Accept / Reject works) and a margin comment explaining why.
 - Inbound e-mail webhook: `POST /api/contracts/{id}/reply` with header `X-Conexus-Webhook-Token`
   equal to `CONEXUS_WEBHOOK_TOKEN`.
+- **Database**: SQLite by default. Set `DATABASE_URL` to a PostgreSQL URL (Neon / Supabase free tier
+  work) and contracts, users, sessions, policy, notifications and the audit chain are all stored there,
+  so nothing is lost on redeploys. Tested against a real Postgres in `tests/test_postgres.py`.
+- **Notifications**: the bell in the top bar shows escalations (to Legal), signed deals, approvals and
+  closures; a toast pops up when something new arrives.
+- **Analytics** (`/analytics`): activity per day, signed value, why deals paused, rounds to agreement,
+  value by segment and the biggest discounts.
 - CI: GitHub Actions runs the Python tests, the web typecheck and build, and a Docker build on every push.
 
 ## Web app and component library
@@ -220,6 +227,8 @@ tests/              unit + API tests
   measurements.
 - **DocuSign is a stub** (writes the envelope JSON to `runs/envelopes/`). Slack and SMTP work once
   credentials are set.
+- **CRM memory write-back** still goes to CSV / memory, and DocuSign envelopes are files, so on a host
+  with an ephemeral disk those two reset on redeploy even with `DATABASE_URL` set.
 - **Claude/Ollama paths** are implemented but have not yet been run against live models.
 
 ## Roadmap

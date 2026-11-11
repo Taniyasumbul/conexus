@@ -1,7 +1,9 @@
 import React, { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { AppShell, Skeleton, ToastProvider } from "@ui";
+import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { AppShell, NotificationBell, Skeleton, ToastProvider, useToast } from "@ui";
 import { api } from "@lib/api";
 import { readPalette, readTheme, useApi } from "@lib/hooks";
 import { AuthProvider, useAuth } from "@lib/auth";
@@ -19,13 +21,34 @@ const Gallery = lazy(() => import("./pages/Gallery"));
 const Annotate = lazy(() => import("./pages/Annotate"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Themes = lazy(() => import("./pages/Themes"));
+const Analytics = lazy(() => import("./pages/Analytics"));
 
 function App() {
   const { user, signOut } = useAuth();
   const inbox = useApi(api.inbox, [], () => 4000);
   const health = useApi(api.health, []);
+  const notes = useApi(api.notifications, [], () => 6000);
+  const navigate = useNavigate();
+  const toast = useToast();
+  const seen = useRef<number | null>(null);
+  // pop a toast when something new arrives (not on first load)
+  useEffect(() => {
+    const items = notes.data?.items;
+    if (!items) return;
+    const newest = items[0]?.id ?? 0;
+    if (seen.current !== null && newest > seen.current) {
+      items.filter((n) => n.id > (seen.current ?? 0) && !n.read).slice(0, 2).forEach((n) =>
+        toast(n.title, n.kind === "escalation" ? "critical" : n.kind === "signed" ? "good" : "info"));
+    }
+    seen.current = newest;
+  }, [notes.data, toast]);
+  const bell = (
+    <NotificationBell items={notes.data?.items ?? []} unread={notes.data?.unread ?? 0}
+      onOpenItem={async (n) => { if (!n.read) await api.readNotifications({ ids: [n.id] }); notes.reload(); if (n.link) navigate(n.link); }}
+      onReadAll={async () => { await api.readNotifications({ all: true }); notes.reload(); }} />
+  );
   return (
-    <AppShell inboxCount={inbox.data?.length ?? 0} llm={health.data?.llm} user={user} onSignOut={signOut}>
+    <AppShell inboxCount={inbox.data?.length ?? 0} llm={health.data?.llm} user={user} onSignOut={signOut} bell={bell}>
       <Suspense fallback={<Skeleton height={320} />}>
       <Routes>
         <Route path="/" element={<Overview />} />
@@ -37,6 +60,7 @@ function App() {
         <Route path="/annotate" element={<Annotate />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/themes" element={<Themes />} />
+        <Route path="/analytics" element={<Analytics />} />
         <Route path="/evaluation" element={<Evaluation />} />
         <Route path="/architecture" element={<Architecture />} />
         <Route path="/ui" element={<Gallery />} />

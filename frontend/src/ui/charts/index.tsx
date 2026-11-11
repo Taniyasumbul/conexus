@@ -1,7 +1,7 @@
 /* Nexus UI charts. Colours come from tokens (validated categorical slots 1-2);
    reference lines use muted ink, never a series colour; one y-axis per chart. */
 import {
-  Bar, BarChart, CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import type { Offer, PricingPlan } from "@lib/api";
 import { money } from "@lib/api";
@@ -124,6 +124,76 @@ export function ThresholdChart({ sweep, threshold, height = 260 }: { sweep: { th
           </LineChart>
         </ResponsiveContainer>
       </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- analytics charts */
+
+/** Contracts analysed vs deals signed per day: two categorical series, grouped bars. */
+export function ActivityChart({ data, height = 240 }: { data: { day: string; analyzed: number; signed: number }[]; height?: number }) {
+  const t = useTokens(TOKENS);
+  const axis = { stroke: t["border-strong"], tick: { fill: t["fg-3"], fontSize: 11 }, tickLine: false };
+  return (
+    <div className="nx-stack" style={{ ["--gap" as string]: "8px" }}>
+      <Legend items={[{ label: "Contracts analysed", color: t["series-1"] }, { label: "Deals signed", color: t["series-2"] }]} />
+      <div style={{ width: "100%", height }}>
+        <ResponsiveContainer>
+          <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -12 }} barGap={2} barCategoryGap="28%">
+            <CartesianGrid stroke={t["chart-grid"]} vertical={false} />
+            <XAxis dataKey="day" {...axis} interval="preserveStartEnd" />
+            <YAxis {...axis} allowDecimals={false} width={36} />
+            <Tooltip content={<ChartTooltip />} cursor={{ fill: t["chart-grid"] }} />
+            <Bar name="Contracts analysed" dataKey="analyzed" fill={t["series-1"]} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+            <Bar name="Deals signed" dataKey="signed" fill={t["series-2"]} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+/** Signed value per day: one series, area with an emphasised line. */
+export function ValueArea({ data, height = 240 }: { data: { day: string; value: number }[]; height?: number }) {
+  const t = useTokens(TOKENS);
+  const axis = { stroke: t["border-strong"], tick: { fill: t["fg-3"], fontSize: 11 }, tickLine: false };
+  return (
+    <div style={{ width: "100%", height }}>
+      <ResponsiveContainer>
+        <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          <defs>
+            <linearGradient id="nx-value-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={t["series-1"]} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={t["series-1"]} stopOpacity={0.02} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke={t["chart-grid"]} vertical={false} />
+          <XAxis dataKey="day" {...axis} interval="preserveStartEnd" />
+          <YAxis {...axis} width={56} tickFormatter={(v) => money(v, true)} />
+          <Tooltip content={<ChartTooltip fmt={(v: number) => money(v)} />} cursor={{ stroke: t["border-strong"] }} />
+          <Area name="Signed value" dataKey="value" stroke={t["series-1"]} strokeWidth={2} fill="url(#nx-value-fill)"
+            dot={false} activeDot={{ r: 5, stroke: t.surface, strokeWidth: 2 }} isAnimationActive={false} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+/** A small single-series column chart (e.g. rounds to agreement). */
+export function Columns({ data, x, y, label, height = 200 }: { data: Record<string, number | string>[]; x: string; y: string; label: string; height?: number }) {
+  const t = useTokens(TOKENS);
+  const axis = { stroke: t["border-strong"], tick: { fill: t["fg-3"], fontSize: 11 }, tickLine: false };
+  return (
+    <div style={{ width: "100%", height }}>
+      <ResponsiveContainer>
+        <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }} barCategoryGap="22%">
+          <CartesianGrid stroke={t["chart-grid"]} vertical={false} />
+          <XAxis dataKey={x} {...axis} />
+          <YAxis {...axis} allowDecimals={false} width={36} />
+          <Tooltip content={<ChartTooltip labelFmt={(v: string) => `${v} ${x}`} />} cursor={{ fill: t["chart-grid"] }} />
+          <Bar name={label} dataKey={y} fill={t["series-1"]} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
-  BookOpenCheck, Boxes, ChevronDown, FilePlus2, FileStack, FlaskConical, Hand, LayoutDashboard, LogOut, Menu, Moon,
+  BarChart3, BookOpenCheck, Boxes, ChevronDown, FilePlus2, FileStack, FlaskConical, Hand, LayoutDashboard, LogOut, Menu, Moon,
   Network, Palette, Plus, Settings2, Sun, Tags, X,
 } from "lucide-react";
 import type { Role } from "@lib/api";
@@ -16,6 +16,7 @@ const MAIN = [
   { to: "/contracts", label: "Contracts", icon: FileStack },
   { to: "/inbox", label: "Inbox", icon: Hand, badge: true },
   { to: "/ledger", label: "Ledger", icon: BookOpenCheck },
+  { to: "/analytics", label: "Analytics", icon: BarChart3 },
 ];
 const RESEARCH: { to: string; label: string; hint: string; icon: typeof Tags; role?: Role }[] = [
   { to: "/evaluation", label: "Evaluation", hint: "Results for every research objective", icon: FlaskConical },
@@ -50,8 +51,8 @@ function useClickOutside(open: boolean, close: () => void) {
 const THEME_NEXT: Record<ThemePref, ThemePref> = { system: "dark", light: "dark", dark: "light" };
 const THEME_ICON = { system: Moon, light: Moon, dark: Sun };  // shows what clicking switches to
 
-export function AppShell({ children, inboxCount, llm, user, onSignOut }: {
-  children: ReactNode; inboxCount: number; llm?: string; user: ShellUser; onSignOut: () => void;
+export function AppShell({ children, inboxCount, llm, user, onSignOut, bell }: {
+  children: ReactNode; inboxCount: number; llm?: string; user: ShellUser; onSignOut: () => void; bell?: ReactNode;
 }) {
   const nav = useNavigate();
   const loc = useLocation();
@@ -101,6 +102,7 @@ export function AppShell({ children, inboxCount, llm, user, onSignOut }: {
 
           <div className="nx-topbar__end">
             <button type="button" className="nx-btn nx-btn--primary nx-btn--sm nx-hide-sm" onClick={() => nav("/new")}><Plus size={16} />New contract</button>
+            {bell}
             <button type="button" className="nx-iconbtn" onClick={() => setTheme(THEME_NEXT[theme])}
               aria-label={`Switch to ${THEME_NEXT[theme]} mode`} title={`Switch to ${THEME_NEXT[theme]} mode`}>
               <ThemeIcon size={16} />

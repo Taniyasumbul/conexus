@@ -25,13 +25,20 @@ def _digest(event: dict) -> str:
 class AuditAgent:
     name = "audit"
 
-    def __init__(self, path: str | Path | None = None, enabled: bool = True):
+    def __init__(self, path: str | Path | None = None, enabled: bool = True, sink: Any = None):
+        """sink: optional object with audit_load() / audit_append(event), e.g. the Store when
+        DATABASE_URL is set, so the chain survives restarts on hosts with ephemeral disks."""
         self.enabled = enabled
-        self.path = Path(path) if path else None
+        self.path = Path(path) if path and sink is None else None
+        self.sink = sink
         self.events: list[dict] = []
         self.head = GENESIS
         self._lock = threading.Lock()
-        if self.path:
+        if sink is not None:
+            self.events = sink.audit_load()
+            if self.events:
+                self.head = self.events[-1]["hash"]
+        elif self.path:
             self.path.parent.mkdir(parents=True, exist_ok=True)
             if self.path.exists():
                 for line in self.path.read_text().splitlines():
@@ -60,9 +67,30 @@ class AuditAgent:
         event["hash"] = _digest(event)
         self.head = event["hash"]
         self.events.append(event)
-        if self.path:
+        if self.sink is not None:
+            self.sink.audit_append(event)
+        elif self.path:
             with open(self.path, "a") as f:
                 f.write(json.dumps(event, default=str) + "\n")
+
+    @staticmethod
+    def verify_chain(events: list[dict]) -> tuple[bool, str]:
+        prev = GENESIS
+        for i, ev in enumerate(events):
+            if ev.get("prev_hash") != prev:
+                return False, f"chain broken at seq {i}: prev_hash mismatch"
+            if _digest(json.loads(json.dumps(ev, default=str))) != ev.get("hash"):
+                return False, f"event {i} was modified (hash mismatch)"
+            prev = ev["hash"]
+        return True, f"OK - chain intact, head={prev[:16]}..."
+
+    def verify_stored(self) -> tuple[bool, str]:
+        """Verify what is actually persisted (database or file), not just memory."""
+        if self.sink is not None:
+            return self.verify_chain(self.sink.audit_load())
+        if self.path and self.path.exists():
+            return self.verify(self.path)
+        return True, "empty log"
 
     @staticmethod
     def verify(path: str | Path) -> tuple[bool, str]:
