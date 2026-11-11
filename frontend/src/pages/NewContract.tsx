@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileUp, ScanSearch } from "lucide-react";
-import { Badge, Button, Card, ChoiceGroup, Field, Grid, Input, PageHeader, Select, Stack, useToast } from "@ui";
+import { Badge, Button, Card, ChoiceGroup, Dropzone, Field, Grid, Input, PageHeader, Select, Stack, useToast } from "@ui";
 import { api, ApiError, money, Sample, titleCase } from "@lib/api";
 import { useApi } from "@lib/hooks";
 
@@ -12,7 +12,7 @@ export default function NewContract() {
   const nav = useNavigate();
   const toast = useToast();
   const samples = useApi(api.samples, []);
-  const [source, setSource] = useState<Source>("sample");
+  const [source, setSource] = useState<Source>("upload");
   const [sampleId, setSampleId] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [form, setForm] = useState({ customer: "", segment: "smb", region: "india", product: "pro" as keyof typeof PRICE, seats: 50 });
@@ -50,7 +50,7 @@ export default function NewContract() {
   return (
     <form onSubmit={submit}>
       <Stack gap={20}>
-        <PageHeader eyebrow="Ingest" title="New contract" description="Give the agents the customer's paper and the deal context from your CRM. Nothing is sent to the customer until you start negotiating." />
+        <PageHeader title="New contract" description="Nothing is sent to the customer until you start negotiating." />
 
         <Card title="1 · Contract" subtitle="PDF, DOCX or plain text">
           <Stack gap={16}>
@@ -64,9 +64,7 @@ export default function NewContract() {
                   options={(samples.data ?? []).map((s) => ({ value: s.id, label: `${s.id} · ${s.customer} · ${titleCase(s.segment)} ${s.region.toUpperCase()} · ${s.product} ×${s.seats}${s.expert_should_escalate ? "  [risky]" : ""}` }))} />
               </Field>
             ) : (
-              <Field label="Contract file" htmlFor="file" hint={file ? `${file.name} · ${(file.size / 1024).toFixed(0)} KB` : "Max a few MB. Scanned PDFs need OCR first."}>
-                <Input id="file" type="file" accept=".pdf,.docx,.txt,.md" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-              </Field>
+              <Dropzone file={file} onFile={setFile} />
             )}
           </Stack>
         </Card>

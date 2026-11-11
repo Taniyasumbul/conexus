@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { Check, Download, Play, Trash2 } from "lucide-react";
 import {
-  Alert, AuditTimeline, Badge, Button, Card, ChoiceGroup, ClauseCard, DealStepper, Dialog, EmptyState, Field, Grid, HashChip,
+  Alert, AuditTimeline, Avatar, Badge, Button, SaveBar, Switch, Card, ChoiceGroup, ClauseCard, DealStepper, Dialog, EmptyState, Field, Grid, HashChip,
   Input, KeyValue, NegotiationThread, PageHeader, PriceChart, Range, RedlineDiff, RiskBadge, Row, ScoreMeter, Segmented, Select,
   SignatureStamp, Skeleton, Spinner, Stack, Stat, StatusBadge, Table, Tabs, Textarea, useToast,
 } from "@ui";
@@ -48,11 +48,11 @@ export default function Gallery() {
   const [tab, setTab] = useState("one");
   const [range, setRange] = useState(0.5);
   const [dialog, setDialog] = useState(false);
+  const [sw, setSw] = useState(true);
 
   return (
     <Stack gap={20}>
-      <PageHeader eyebrow="Nexus UI" title="Component library"
-        description="The design system every CoNexus screen is built from: tokens, primitives and contract-negotiation components. Import from @ui. All data on this page is example data." />
+      <PageHeader title="Component library" description="Nexus UI: every token and component. Example data only." />
 
       <Section id="tokens" title="Tokens" note="Defined once in tokens.css; light and dark themes redefine the same names">
         <Grid min={110} gap={12}>{SWATCHES.map((s) => <div key={s} className="nx-swatch"><i style={{ background: `var(--${s})` }} /><code>--{s}</code></div>)}</Grid>
@@ -103,6 +103,11 @@ export default function Gallery() {
         <Segmented label="Example" value={seg} onChange={setSeg} options={[{ value: "day", label: "Day" }, { value: "week", label: "Week" }, { value: "month", label: "Month" }]} />
         <ChoiceGroup label="Persona" value={choice} onChange={setChoice} options={[
           { value: "cooperative", title: "Cooperative", detail: "Concedes quickly" }, { value: "hardball", title: "Hardball", detail: "Rejects redlines" }, { value: "deadline", title: "Deadline", detail: "Late concessions" }]} />
+      </Section>
+
+      <Section id="identity" title="Switch · Avatar · SaveBar" note="Used by Settings and the user menu">
+        <Row gap={24}><Switch id="g-sw" checked={sw} onChange={setSw} label={sw ? "Pause on new legal terms: on" : "Pause on new legal terms: off"} /><Row gap={8}><Avatar name="Taniya Sumbul" /><Avatar name="Legal Reviewer" size="lg" /></Row></Row>
+        <SaveBar actions={<><Button variant="ghost">Discard</Button><Button variant="primary">Save 2 changes</Button></>}>2 unsaved changes to the agents' policy</SaveBar>
       </Section>
 
       <Section id="nav" title="Tabs · DealStepper">

@@ -1,0 +1,191 @@
+{
+  "model": "ollama:qwen2.5:3b",
+  "parsing": {
+    "n_messages": 46,
+    "styles": [
+      "template",
+      "shorthand",
+      "words",
+      "email",
+      "indian_english",
+      "acceptance"
+    ],
+    "results": {
+      "regex": {
+        "overall": 0.217,
+        "by_style": {
+          "template": 1.0,
+          "shorthand": 0.0,
+          "words": 0.0,
+          "email": 0.0,
+          "indian_english": 0.0,
+          "acceptance": 0.333
+        },
+        "fields": {
+          "price": 0.261,
+          "days": 0.304,
+          "accept": 0.913,
+          "redlines": 0.5
+        },
+        "sec_per_message": 0.0
+      },
+      "llm (ollama:qwen2.5:3b)": {
+        "overall": 0.391,
+        "by_style": {
+          "template": 0.5,
+          "shorthand": 0.5,
+          "words": 0.25,
+          "email": 0.25,
+          "indian_english": 0.0,
+          "acceptance": 1.0
+        },
+        "fields": {
+          "price": 0.652,
+          "days": 0.652,
+          "accept": 0.717,
+          "redlines": 0.848
+        },
+        "sec_per_message": 1.488
+      }
+    },
+    "examples": {
+      "template": "Our counter-proposal is $21,000 per year with payment net 90 days. We accept the change to clause c10.",
+      "shorthand": "Can do 18.5k annually if we get 30-day terms.",
+      "words": "We could stretch to twenty-four thousand seven hundred and fifty dollars a year, paid within 60 days of invoice. Clause 11: we have to push back.",
+      "email": "Hi team,\n\nThanks for the revised draft. Finance has signed off on USD 24,750/yr; they need payment terms of 60 days though.\n\n\nBest,\nProcurement",
+      "indian_english": "Kindly note we can do Rs-equivalent of USD 15,000 per annum only, with 30 days credit period. Point 13 is not acceptable from our side.",
+      "acceptance": "We accept your proposal of $12,000 per year, net 45. Deal."
+    }
+  },
+  "risk_held_out": {
+    "hybrid (test sample n=60, ollama:qwen2.5:3b)": {
+      "precision": 0.923,
+      "recall": 0.8,
+      "f1": 0.857,
+      "tp": 24,
+      "fp": 2,
+      "fn": 6,
+      "tn": 28
+    },
+    "llm (test sample n=60, ollama:qwen2.5:3b)": {
+      "precision": 0.483,
+      "recall": 0.933,
+      "f1": 0.636,
+      "tp": 28,
+      "fp": 30,
+      "fn": 2,
+      "tn": 0
+    },
+    "hybrid+llm (test sample n=60, ollama:qwen2.5:3b)": {
+      "precision": 0.492,
+      "recall": 0.967,
+      "f1": 0.652,
+      "tp": 29,
+      "fp": 30,
+      "fn": 1,
+      "tn": 0
+    }
+  },
+  "negotiation": [
+    {
+      "system": "single_llm (ollama:qwen2.5:3b)",
+      "n": 10,
+      "agreement_rate": 0.0,
+      "escalation_rate": 1.0,
+      "avg_rounds_to_agree": null,
+      "price_over_wtp": null,
+      "surplus_share": null,
+      "revenue_per_contract": 0.0,
+      "risky_contracts_handled": 1.0,
+      "unreviewed_risky_clauses_signed": 0,
+      "est_days_to_outcome": 5.0,
+      "runtime_ms_per_contract": 1911.96
+    },
+    {
+      "system": "conexus + ollama:qwen2.5:3b",
+      "n": 10,
+      "agreement_rate": 0.6,
+      "escalation_rate": 0.2,
+      "avg_rounds_to_agree": 3.67,
+      "price_over_wtp": 0.989,
+      "surplus_share": 0.756,
+      "revenue_per_contract": 7513.4,
+      "risky_contracts_handled": 1.0,
+      "unreviewed_risky_clauses_signed": 0,
+      "est_days_to_outcome": 4.2,
+      "runtime_ms_per_contract": 15283.34
+    },
+    {
+      "system": "conexus (offline)",
+      "n": 10,
+      "agreement_rate": 0.5,
+      "escalation_rate": 0.3,
+      "avg_rounds_to_agree": 5.8,
+      "price_over_wtp": 0.911,
+      "surplus_share": 0.591,
+      "revenue_per_contract": 6112.0,
+      "risky_contracts_handled": 1.0,
+      "unreviewed_risky_clauses_signed": 0,
+      "est_days_to_outcome": 6.4,
+      "runtime_ms_per_contract": 4.41
+    }
+  ],
+  "parsing_hybrid": {
+    "n_messages": 46,
+    "styles": [
+      "template",
+      "shorthand",
+      "words",
+      "email",
+      "indian_english",
+      "acceptance"
+    ],
+    "results": {
+      "regex": {
+        "overall": 0.217,
+        "by_style": {
+          "template": 1.0,
+          "shorthand": 0.0,
+          "words": 0.0,
+          "email": 0.0,
+          "indian_english": 0.0,
+          "acceptance": 0.333
+        },
+        "fields": {
+          "price": 0.261,
+          "days": 0.304,
+          "accept": 0.913,
+          "redlines": 0.5
+        },
+        "sec_per_message": 0.0
+      },
+      "llm (ollama:qwen2.5:3b)": {
+        "overall": 0.413,
+        "by_style": {
+          "template": 0.625,
+          "shorthand": 0.5,
+          "words": 0.25,
+          "email": 0.25,
+          "indian_english": 0.0,
+          "acceptance": 1.0
+        },
+        "fields": {
+          "price": 0.674,
+          "days": 0.674,
+          "accept": 0.717,
+          "redlines": 0.848
+        },
+        "sec_per_message": 1.29
+      }
+    },
+    "examples": {
+      "template": "Our counter-proposal is $21,000 per year with payment net 90 days. We accept the change to clause c10.",
+      "shorthand": "Can do 18.5k annually if we get 30-day terms.",
+      "words": "We could stretch to twenty-four thousand seven hundred and fifty dollars a year, paid within 60 days of invoice. Clause 11: we have to push back.",
+      "email": "Hi team,\n\nThanks for the revised draft. Finance has signed off on USD 24,750/yr; they need payment terms of 60 days though.\n\n\nBest,\nProcurement",
+      "indian_english": "Kindly note we can do Rs-equivalent of USD 15,000 per annum only, with 30 days credit period. Point 13 is not acceptable from our side.",
+      "acceptance": "We accept your proposal of $12,000 per year, net 45. Deal."
+    }
+  },
+  "parsing_hybrid_note": "post-hoc revision: regex-first, LLM fills gaps; designed after seeing the first run on the same 46 messages"
+}

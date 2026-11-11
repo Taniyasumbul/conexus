@@ -16,8 +16,7 @@ export default function Ledger() {
   const v = verify.data;
   return (
     <Stack gap={20}>
-      <PageHeader eyebrow="RO4 · Audit & explainability" title="Audit ledger"
-        description="Every agent and reviewer decision is chained to the one before it with SHA-256. Editing, deleting or reordering any entry breaks the chain, and verification finds it."
+      <PageHeader title="Audit ledger" description="Every decision, chained with SHA-256."
         actions={<Button icon={<RefreshCw size={15} />} onClick={() => { verify.reload(); events.reload(); }}>Verify again</Button>} />
       {!v ? <Skeleton height={80} /> : (
         <Alert tone={v.ok ? "good" : "critical"} title={v.ok ? "Chain intact" : "Chain broken"}>

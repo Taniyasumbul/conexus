@@ -206,7 +206,15 @@ stateDiagram-v2
 | GET | `/api/metrics` | Portfolio KPIs |
 | GET | `/api/samples` | Bundled demo contracts and scenarios |
 | GET | `/api/eval` | Latest evaluation results |
-| GET | `/health` | Liveness + active LLM provider |
+| GET | `/health` | Liveness + active LLM provider (public) |
+| GET | `/api/auth/status` · POST `/api/auth/login` · `/logout` · `/setup` | Session; one-time first-admin setup |
+| GET/POST/PATCH | `/api/users` | Team management (admin) |
+| GET/PUT | `/api/policy` · GET `/api/policy/history` | Escalation and pricing policy (PUT: admin, audited) |
+| GET | `/api/contracts/{id}/redline.docx` | Word export with tracked changes |
+| GET/POST | `/api/annotate/next` · `/api/annotate` · `/api/annotate/stats` | Expert clause labelling (legal) |
+
+Every `/api` route except auth requires a signed-in user; decisions and annotation need Legal,
+policy changes and user management need Admin.
 
 Interactive OpenAPI docs: `http://localhost:8000/docs`.
 

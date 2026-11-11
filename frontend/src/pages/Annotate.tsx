@@ -1,28 +1,20 @@
 import { ReactNode, useCallback, useEffect, useState } from "react";
 import { ArrowRight, BookMarked, CircleHelp, ShieldAlert, ShieldCheck } from "lucide-react";
 import {
-  Alert, Badge, Button, Card, EmptyState, Field, Grid, Input, KeyValue, PageHeader, Row, ScoreMeter, Segmented, Skeleton,
+  Alert, Badge, Button, Card, EmptyState, Field, Grid, KeyValue, PageHeader, Row, ScoreMeter, Segmented, Skeleton,
   Stack, Stat, Table, Textarea, useToast,
 } from "@ui";
 import { AnnotateItem, AnnotateReveal, api, ApiError, pct, RiskLevel, titleCase } from "@lib/api";
 import { useApi } from "@lib/hooks";
+import { useAuth } from "@lib/auth";
 import { ErrorState } from "./shared";
 
 type Choice = "human" | "standard" | "unsure";
 
-function useAnnotator(): [string, (v: string) => void] {
-  const [name, setName] = useState(() => {
-    const fromLink = new URLSearchParams(window.location.search).get("annotator");  // personal links: /annotate?annotator=taniya
-    if (fromLink) return fromLink.trim();
-    try { return localStorage.getItem("nx-annotator") || ""; } catch { return ""; }
-  });
-  return [name, (v: string) => { setName(v); try { localStorage.setItem("nx-annotator", v); } catch { /* ignore */ } }];
-}
-
 export default function Annotate() {
   const toast = useToast();
-  const [annotator, setAnnotator] = useAnnotator();
-  const [draftName, setDraftName] = useState(annotator);
+  const { user } = useAuth();
+  const annotator = user.email;
   const [item, setItem] = useState<AnnotateItem | null>(null);
   const [loadErr, setLoadErr] = useState<ApiError | null>(null);
   const [choice, setChoice] = useState<Choice | null>(null);
@@ -34,9 +26,8 @@ export default function Annotate() {
   const stats = useApi(api.annotateStats, [reveal]);
 
   const loadNext = useCallback(async () => {
-    if (!annotator) return;
     setReveal(null); setChoice(null); setNote(""); setRedlinable(false); setLevel("medium");
-    try { setItem(await api.annotateNext(annotator)); setLoadErr(null); } catch (e) { setLoadErr(e as ApiError); }
+    try { setItem(await api.annotateNext()); setLoadErr(null); } catch (e) { setLoadErr(e as ApiError); }
   }, [annotator]);
   useEffect(() => { loadNext(); }, [loadNext]);
 
@@ -45,12 +36,12 @@ export default function Annotate() {
     setBusy(true);
     try {
       setReveal(await api.annotate({
-        clause_id: item.clause_id, annotator, note,
+        clause_id: item.clause_id, note,
         requires_human: c === "unsure" ? null : c === "human",
         level: c === "unsure" ? null : level, redlinable: c === "unsure" ? null : redlinable,
       }));
     } catch (e) { toast((e as ApiError).message, "critical"); } finally { setBusy(false); }
-  }, [item, choice, reveal, busy, annotator, note, level, redlinable, toast]);
+  }, [item, choice, reveal, busy, note, level, redlinable, toast]);
 
   // keyboard: H / S / U choose, 1-3 level, R redlinable, Enter submit or next
   useEffect(() => {
@@ -71,21 +62,6 @@ export default function Annotate() {
     return () => window.removeEventListener("keydown", onKey);
   }, [reveal, loadNext, submit]);
 
-  if (!annotator) {
-    return (
-      <Stack gap={20}>
-        <Header />
-        <Card title="Who is annotating?" subtitle="Each annotator labels independently. Use the same name every session.">
-          <form onSubmit={(e) => { e.preventDefault(); if (draftName.trim()) setAnnotator(draftName.trim()); }}>
-            <Row gap={12}>
-              <div style={{ flex: "1 1 240px" }}><Field label="Your name" htmlFor="ann-name"><Input id="ann-name" value={draftName} onChange={(e) => setDraftName(e.target.value)} placeholder="e.g. taniya" /></Field></div>
-              <Button type="submit" variant="primary" style={{ alignSelf: "flex-end" }}>Start annotating</Button>
-            </Row>
-          </form>
-        </Card>
-      </Stack>
-    );
-  }
   if (loadErr) return <Stack gap={20}><Header /><ErrorState error={loadErr} onRetry={loadNext} /></Stack>;
 
   const st = stats.data;
@@ -93,7 +69,7 @@ export default function Annotate() {
 
   return (
     <Stack gap={20}>
-      <Header actions={<Row gap={8}><Badge tone="info" icon={<BookMarked />}>{annotator}</Badge><Button size="sm" variant="ghost" onClick={() => setAnnotator("")}>Switch</Button></Row>} />
+      <Header actions={<Badge tone="info" icon={<BookMarked />}>Labelling as {user.name}</Badge>} />
 
       <div className="nx-split">
         <Stack gap={16}>
@@ -182,6 +158,5 @@ export default function Annotate() {
 }
 
 function Header({ actions }: { actions?: ReactNode }) {
-  return <PageHeader eyebrow="RO2 · Ground truth" title="Annotate clauses" actions={actions}
-    description="Label real CUAD contract clauses from the vendor's side: does this need a human before signing? Follow docs/ANNOTATION_GUIDELINES.md." />;
+  return <PageHeader title="Annotate clauses" actions={actions} description="Would a vendor need a lawyer before signing this clause?" />;
 }

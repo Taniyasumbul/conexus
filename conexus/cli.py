@@ -244,6 +244,25 @@ def eval_llm(risk_sample: int = 60, negotiation_contracts: int = 10, skip_negoti
     con.print(f"saved {path}")
 
 
+@app.command("create-user")
+def create_user(email: str, name: str = typer.Option(...), role: str = typer.Option("sales", help="sales | legal | admin"),
+                db: Path = RUNS / "conexus.db"):
+    """Create a login. Prompts for the password (never pass it on the command line)."""
+    from .api.auth import MIN_PASSWORD, ROLES, hash_password
+    from .store import Store
+
+    if role not in ROLES:
+        raise typer.BadParameter(f"role must be one of {ROLES}")
+    pw = typer.prompt("Password", hide_input=True, confirmation_prompt=True)
+    if len(pw) < MIN_PASSWORD:
+        raise typer.BadParameter(f"password must be at least {MIN_PASSWORD} characters")
+    store = Store(db)
+    if store.user_by_email(email):
+        raise typer.BadParameter(f"{email} already exists")
+    store.create_user(email, name, role, hash_password(pw))
+    con.print(f"[green]Created {role} {email}")
+
+
 @app.command("verify-audit")
 def verify_audit(path: Path):
     """Check that an audit log's hash chain is intact."""
