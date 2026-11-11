@@ -5,7 +5,7 @@ import { AppShell, Skeleton, ToastProvider } from "@ui";
 import { api } from "@lib/api";
 import { readPalette, readTheme, useApi } from "@lib/hooks";
 import { AuthProvider, useAuth } from "@lib/auth";
-import SignIn from "./pages/SignIn";
+import SignIn, { ForgotPassword, ResetPassword, SignUp, VerifyEmail } from "./pages/SignIn";
 import Landing from "./pages/Landing";
 import Overview from "./pages/Overview";
 import Contracts from "./pages/Contracts";
@@ -59,6 +59,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           // signed out: public website at "/", sign-in everywhere else (first-run setup always shows sign-in)
           <Routes>
             {!status?.setup_required && <Route path="/" element={<Landing status={status} onSignedIn={onSignedIn} />} />}
+            <Route path="/signup" element={<SignUp status={status} onSignedIn={onSignedIn} />} />
+            <Route path="/verify" element={<VerifyEmail status={status} onSignedIn={onSignedIn} />} />
+            <Route path="/forgot" element={<ForgotPassword status={status} onSignedIn={onSignedIn} />} />
+            <Route path="/reset" element={<ResetPassword status={status} onSignedIn={onSignedIn} />} />
             <Route path="*" element={<SignIn status={status} onSignedIn={onSignedIn} error={error} />} />
           </Routes>
         )}>

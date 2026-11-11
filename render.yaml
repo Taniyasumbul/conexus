@@ -13,6 +13,18 @@ services:
         value: 0.0.0.0
       - key: CONEXUS_DEMO
         value: "1"            # one-click "Try the demo" account (Legal role, sample deals)
+      - key: CONEXUS_SIGNUP
+        value: "1"            # self sign-up with e-mail verification (Sales role)
+      - key: CONEXUS_PUBLIC_URL
+        sync: false           # e.g. https://conexus.onrender.com (used in e-mailed links)
+      - key: SMTP_HOST
+        sync: false           # smtp.gmail.com with an App Password, or any SMTP provider
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
       - key: CONEXUS_LLM
         value: offline        # set to "anthropic" + add ANTHROPIC_API_KEY to use Claude
       - key: ANTHROPIC_API_KEY

@@ -56,7 +56,7 @@ export interface AnnotationInput { clause_id: string; requires_human: boolean | 
 
 export type Role = "sales" | "legal" | "admin";
 export interface User { id: number; email: string; name: string; role: Role; active?: boolean; created_at?: number }
-export interface AuthStatus { setup_required: boolean; user: User | null; demo_enabled?: boolean }
+export interface AuthStatus { setup_required: boolean; user: User | null; demo_enabled?: boolean; signup_enabled?: boolean }
 export interface ContractDocument { text: string; segments: { clause_id: string; start: number; body_start: number; end: number }[] }
 export interface PolicyField { name: string; description: string; default: unknown; type: "bool" | "int" | "float" | "choice"; ge?: number; le?: number; choices?: string[] }
 export interface Policy {
@@ -102,6 +102,11 @@ export const api = {
   authStatus: () => req<AuthStatus>("GET", "/api/auth/status"),
   login: (email: string, password: string) => req<User>("POST", "/api/auth/login", { email, password }),
   demo: () => req<User>("POST", "/api/auth/demo"),
+  signup: (b: { name: string; email: string; password: string }) => req<{ ok: boolean; email_sent: boolean; dev_link?: string }>("POST", "/api/auth/signup", b),
+  verifyEmail: (token: string) => req<User>("POST", "/api/auth/verify", { token }),
+  resendVerification: (email: string) => req<{ ok: boolean; email_sent: boolean; dev_link?: string }>("POST", "/api/auth/resend-verification", { email }),
+  forgot: (email: string) => req<{ ok: boolean; email_sent: boolean; dev_link?: string }>("POST", "/api/auth/forgot", { email }),
+  reset: (token: string, password: string) => req<User>("POST", "/api/auth/reset", { token, password }),
   document: (id: string) => req<ContractDocument>("GET", `/api/contracts/${id}/document`),
   setup: (b: { email: string; name: string; password: string }) => req<User>("POST", "/api/auth/setup", b),
   logout: () => req<{ ok: boolean }>("POST", "/api/auth/logout"),

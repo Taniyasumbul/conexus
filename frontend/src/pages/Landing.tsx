@@ -139,7 +139,7 @@ export default function Landing({ status, onSignedIn }: { status?: AuthStatus | 
           </nav>
           <div className="lp-nav__end">
             <Link to="/signin" className="lp-link">Sign in</Link>
-            <Link to="/signin" className="lp-btn lp-btn--dark lp-btn--sm">Start free<ArrowRight size={15} /></Link>
+            <Link to={status?.signup_enabled ? "/signup" : "/signin"} className="lp-btn lp-btn--dark lp-btn--sm">Start free<ArrowRight size={15} /></Link>
           </div>
         </div>
       </header>
@@ -151,7 +151,7 @@ export default function Landing({ status, onSignedIn }: { status?: AuthStatus | 
             <h1>Contract negotiation on autopilot</h1>
             <p>CoNexus reads your customer's contract, fixes the risky clauses, negotiates the price from your past deals and asks a human only when it really matters.</p>
             <div className="lp-hero__ctas">
-              <Link to="/signin" className="lp-btn lp-btn--dark lp-btn--lg">Start free<ArrowRight size={18} /></Link>
+              <Link to={status?.signup_enabled ? "/signup" : "/signin"} className="lp-btn lp-btn--dark lp-btn--lg">Start free<ArrowRight size={18} /></Link>
               {canDemo
                 ? <button type="button" className="lp-btn lp-btn--ghost lp-btn--lg" onClick={demo.start} disabled={demo.busy}>{demo.busy ? "Opening demo…" : "Try the demo"}<Sparkles size={16} /></button>
                 : <a href="#product" className="lp-btn lp-btn--ghost lp-btn--lg">See it work</a>}
@@ -261,7 +261,7 @@ export default function Landing({ status, onSignedIn }: { status?: AuthStatus | 
                 <b className="lp-plan__name">{p.name}</b>
                 <div className="lp-plan__price"><span>{p.price}</span><small>{p.per}</small></div>
                 <p>{p.blurb}</p>
-                <Link to="/signin" className={`lp-btn ${p.popular ? "lp-btn--grad" : "lp-btn--outline"}`}>{p.cta}</Link>
+                <Link to={status?.signup_enabled ? "/signup" : "/signin"} className={`lp-btn ${p.popular ? "lp-btn--grad" : "lp-btn--outline"}`}>{p.cta}</Link>
                 <ul>{p.features.map((f) => <li key={f}><Check size={15} />{f}</li>)}</ul>
               </div>
             ))}
@@ -276,7 +276,7 @@ export default function Landing({ status, onSignedIn }: { status?: AuthStatus | 
           <p>Watch an agent negotiate a real contract in under a minute.</p>
           {canDemo
             ? <button type="button" className="lp-btn lp-btn--dark lp-btn--lg" onClick={demo.start} disabled={demo.busy}>Try the demo, no sign-up<ArrowRight size={18} /></button>
-            : <Link to="/signin" className="lp-btn lp-btn--dark lp-btn--lg">Start free<ArrowRight size={18} /></Link>}
+            : <Link to={status?.signup_enabled ? "/signup" : "/signin"} className="lp-btn lp-btn--dark lp-btn--lg">Start free<ArrowRight size={18} /></Link>}
         </div>
       </section>
 

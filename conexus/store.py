@@ -53,6 +53,13 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_id    INTEGER NOT NULL REFERENCES users(id),
     expires_at REAL NOT NULL
 );
+CREATE TABLE IF NOT EXISTS email_tokens (
+    token_hash TEXT PRIMARY KEY,          -- sha256 of the emailed token
+    user_id    INTEGER NOT NULL REFERENCES users(id),
+    purpose    TEXT NOT NULL CHECK (purpose IN ('verify', 'reset')),
+    expires_at REAL NOT NULL,
+    used       INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS kv (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
@@ -69,6 +76,10 @@ class Store:
         self.lock = threading.RLock()
         with self.lock:
             self.db.executescript(SCHEMA)
+            cols = {r["name"] for r in self.db.execute("PRAGMA table_info(users)").fetchall()}
+            if "email_verified" not in cols:  # migration: accounts that existed before sign-up are verified
+                self.db.execute("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 1")
+                self.db.commit()
 
     def create(self, st: NegotiationState, text: str, filename: str | None) -> None:
         now = time.time()
@@ -136,9 +147,29 @@ class Store:
     def user_count(self) -> int:
         return self._q("SELECT COUNT(*) AS n FROM users", one=True)["n"]
 
-    def create_user(self, email: str, name: str, role: str, password_hash: str) -> int:
-        return self._q("INSERT INTO users (email, name, role, password_hash, created_at) VALUES (?,?,?,?,?)",
-                       (email.strip().lower(), name.strip(), role, password_hash, time.time()), commit=True)
+    def create_user(self, email: str, name: str, role: str, password_hash: str, verified: bool = True) -> int:
+        return self._q("INSERT INTO users (email, name, role, password_hash, created_at, email_verified) VALUES (?,?,?,?,?,?)",
+                       (email.strip().lower(), name.strip(), role, password_hash, time.time(), int(verified)), commit=True)
+
+    def set_verified(self, uid: int) -> None:
+        self._q("UPDATE users SET email_verified=1 WHERE id=?", (uid,), commit=True)
+
+    def create_email_token(self, token_hash: str, uid: int, purpose: str, expires_at: float) -> None:
+        # one live token per user and purpose: older links stop working
+        self._q("UPDATE email_tokens SET used=1 WHERE user_id=? AND purpose=? AND used=0", (uid, purpose), commit=True)
+        self._q("INSERT INTO email_tokens (token_hash, user_id, purpose, expires_at) VALUES (?,?,?,?)",
+                (token_hash, uid, purpose, expires_at), commit=True)
+
+    def consume_email_token(self, token_hash: str, purpose: str):
+        """Return the user for a valid, unused, unexpired token and mark it used; otherwise None."""
+        with self.lock:
+            row = self.db.execute("SELECT * FROM email_tokens WHERE token_hash=? AND purpose=? AND used=0 AND expires_at>?",
+                                  (token_hash, purpose, time.time())).fetchone()
+            if not row:
+                return None
+            self.db.execute("UPDATE email_tokens SET used=1 WHERE token_hash=?", (token_hash,))
+            self.db.commit()
+            return self.db.execute("SELECT * FROM users WHERE id=?", (row["user_id"],)).fetchone()
 
     def user_by_email(self, email: str):
         return self._q("SELECT * FROM users WHERE email=?", (email.strip().lower(),), one=True)

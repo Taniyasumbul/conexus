@@ -1036,3 +1036,17 @@ a.nx-card:hover, .nx-card--link:hover { box-shadow: var(--shadow-hover); transfo
 }
 
 .nx-doc { position: relative; scroll-behavior: smooth; }
+
+/* ---------------- account screens ---------------- */
+.nx-auth__forgot { align-self: flex-end; margin-top: -10px; font-size: var(--text-sm); font-weight: 600; color: var(--accent); text-decoration: none; }
+.nx-auth__forgot:hover, .nx-auth__switch a:hover { text-decoration: underline; }
+.nx-auth__switch { text-align: center; color: var(--fg-2); font-size: var(--text-md); }
+.nx-auth__switch a { color: var(--accent); font-weight: 700; text-decoration: none; }
+.nx-auth__back { display: inline-flex; align-items: center; gap: 6px; color: var(--fg-2); font-weight: 600; text-decoration: none; font-size: var(--text-sm); }
+.nx-auth__back:hover { color: var(--fg); }
+.nx-auth__mailicon { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; color: #fff; background: var(--grad); animation: nx-pop .45s both; }
+.nx-auth__strength { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: -10px; }
+.nx-auth__strength i { height: 5px; border-radius: 999px; background: var(--surface-sunken); transition: background .2s ease; }
+.nx-auth__strength[data-level="1"] i:nth-child(1) { background: var(--critical); }
+.nx-auth__strength[data-level="2"] i:nth-child(-n+2) { background: var(--warning); }
+.nx-auth__strength[data-level="3"] i { background: var(--good); }

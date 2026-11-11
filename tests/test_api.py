@@ -242,3 +242,53 @@ def test_document_offsets_cover_clauses(client):
     for seg, cl in zip(doc["segments"], st["clauses"]):
         assert doc["text"][seg["body_start"]:seg["end"]].strip() == cl["text"].strip()
         assert seg["start"] <= seg["body_start"] < seg["end"]
+
+
+# ---------------------------------------------------------------- self sign-up, verification, reset
+from urllib.parse import parse_qs, urlparse
+
+
+def _token(link: str) -> str:
+    return parse_qs(urlparse(link).query)["token"][0]
+
+
+def test_signup_verify_login_and_reset(app, monkeypatch):
+    monkeypatch.setenv("CONEXUS_DEV_EMAIL_LINKS", "1")
+    for k in ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD"):
+        monkeypatch.delenv(k, raising=False)
+    c = TestClient(app)
+    assert c.get("/api/auth/status").json()["signup_enabled"] is True
+    r = c.post("/api/auth/signup", json={"name": "Asha Rao", "email": "Asha@New.io", "password": PW})
+    assert r.status_code == 201 and r.json()["email_sent"] is False and "/verify?token=" in r.json()["dev_link"]
+    # cannot sign in before confirming the e-mail
+    assert c.post("/api/auth/login", json={"email": "asha@new.io", "password": PW}).status_code == 403
+    tok = _token(r.json()["dev_link"])
+    me = c.post("/api/auth/verify", json={"token": tok}).json()
+    assert me["email"] == "asha@new.io" and me["role"] == "sales"
+    assert c.post("/api/auth/verify", json={"token": tok}).status_code == 400  # single use
+    assert TestClient(app).post("/api/auth/login", json={"email": "asha@new.io", "password": PW}).status_code == 200
+    # duplicate sign-up of a verified account is refused
+    assert c.post("/api/auth/signup", json={"name": "X", "email": "asha@new.io", "password": PW}).status_code == 409
+    # forgot -> reset -> sign in with the new password; old password stops working
+    f = c.post("/api/auth/forgot", json={"email": "asha@new.io"}).json()
+    new_pw = "brand-new-password-42"
+    assert c.post("/api/auth/reset", json={"token": _token(f["dev_link"]), "password": new_pw}).status_code == 200
+    assert TestClient(app).post("/api/auth/login", json={"email": "asha@new.io", "password": PW}).status_code == 401
+    assert TestClient(app).post("/api/auth/login", json={"email": "asha@new.io", "password": new_pw}).status_code == 200
+
+
+def test_no_links_exposed_without_dev_flag(app, monkeypatch):
+    monkeypatch.delenv("CONEXUS_DEV_EMAIL_LINKS", raising=False)
+    for k in ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD"):
+        monkeypatch.delenv(k, raising=False)
+    c = TestClient(app)
+    r = c.post("/api/auth/signup", json={"name": "Bo", "email": "bo@new.io", "password": PW}).json()
+    assert "dev_link" not in r
+    assert "dev_link" not in c.post("/api/auth/forgot", json={"email": "legal@x.io"}).json()
+    # unknown e-mails get the same answer (no account enumeration)
+    assert c.post("/api/auth/forgot", json={"email": "nobody@x.io"}).json() == {"ok": True, "email_sent": False}
+
+
+def test_signup_blocked_before_first_admin(tmp_path):
+    app = create_app(get_settings(llm_provider="offline"), tmp_path / "s.db", tmp_path / "a.jsonl", labels_export=tmp_path / "e.jsonl")
+    assert TestClient(app).post("/api/auth/signup", json={"name": "A", "email": "a@x.io", "password": PW}).status_code == 409

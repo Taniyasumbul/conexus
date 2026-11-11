@@ -35,6 +35,7 @@ from ..agents.audit import AuditAgent
 from ..agents.risk import RiskClassifier
 from ..config import DATA, RUNS, EscalationPolicyConfig, PricingPolicyConfig, Settings, get_settings
 from ..integrations.channels import Channel, ConsoleChannel, EmailChannel, SlackChannel
+from ..integrations import mailer
 from ..integrations.redline_docx import build_redline_docx
 from ..llm import build_llm
 from ..models import DealContext, HumanDecision, NegotiationState, Terms
@@ -75,6 +76,18 @@ class LoginRequest(BaseModel):
 
 class SetupRequest(LoginRequest):
     name: str = Field(min_length=1, max_length=80)
+
+
+class EmailRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=200)
+
+
+class TokenRequest(BaseModel):
+    token: str = Field(min_length=10, max_length=200)
+
+
+class ResetRequest(TokenRequest):
+    password: str = Field(min_length=1, max_length=200)
 
 
 class UserCreate(SetupRequest):
@@ -249,7 +262,8 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
             user = current_user(request)
         except HTTPException:
             user = None
-        return {"setup_required": real_users() == 0, "user": user, "demo_enabled": demo_enabled}
+        return {"setup_required": real_users() == 0, "user": user, "demo_enabled": demo_enabled,
+                "signup_enabled": signup_enabled and real_users() > 0}
 
     @app.post("/api/auth/setup")
     def auth_setup(req: SetupRequest, request: Request, response: Response):
@@ -261,6 +275,87 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
         audit.log("auth", "USER_CREATED", f"first admin {req.email} created via setup", {"role": "admin"})
         _login(response, request, uid)
         return public_user(store.user_by_id(uid))
+
+    # ------------------------------------------------------------------ sign up, verify, reset
+    signup_enabled = os.getenv("CONEXUS_SIGNUP", "1").lower() in ("1", "true", "yes")
+    VERIFY_TTL, RESET_TTL = 24 * 3600, 30 * 60
+
+    def _public_url(request: Request) -> str:
+        return (os.getenv("CONEXUS_PUBLIC_URL") or str(request.base_url)).rstrip("/")
+
+    def _send_link(request: Request, uid: int, email: str, name: str, purpose: str) -> dict:
+        token = secrets.token_urlsafe(32)
+        store.create_email_token(token_hash(token), uid, purpose, time.time() + (VERIFY_TTL if purpose == "verify" else RESET_TTL))
+        page = "verify" if purpose == "verify" else "reset"
+        link = f"{_public_url(request)}/{page}?token={token}"
+        if purpose == "verify":
+            sent = mailer.send(email, "Confirm your CoNexus e-mail", f"Welcome, {name.split(' ')[0]}",
+                               "Confirm your e-mail address to finish creating your CoNexus account.",
+                               "Confirm e-mail", link, "The link works once and expires in 24 hours. If you did not sign up, ignore this e-mail.")
+        else:
+            sent = mailer.send(email, "Reset your CoNexus password", "Reset your password",
+                               "Someone asked to reset the password for this CoNexus account. Choose a new one with the button below.",
+                               "Choose a new password", link, "The link works once and expires in 30 minutes. If it was not you, ignore this e-mail.")
+        out: dict = {"ok": True, "email_sent": sent}
+        if not sent and mailer.dev_links_enabled():
+            out["dev_link"] = link  # local development only: no SMTP configured
+        return out
+
+    @app.post("/api/auth/signup", status_code=201)
+    def auth_signup(req: SetupRequest, request: Request):
+        if not signup_enabled:
+            raise HTTPException(404, "Sign-up is turned off on this server. Ask an admin for an account.")
+        if real_users() == 0:
+            raise HTTPException(409, "This workspace has no admin yet. Use the setup screen first.")
+        if "@" not in req.email or "." not in req.email.split("@")[-1]:
+            raise HTTPException(422, "Enter a valid e-mail address")
+        existing = store.user_by_email(req.email)
+        if existing and existing["email_verified"]:
+            raise HTTPException(409, "An account with this e-mail already exists. Sign in or reset your password.")
+        check_password_strength(req.password)
+        if existing:  # signed up before but never verified: refresh details and resend
+            store.update_user(existing["id"], name=req.name, password_hash=hash_password(req.password))
+            uid = existing["id"]
+        else:
+            uid = store.create_user(req.email, req.name, "sales", hash_password(req.password), verified=False)
+            audit.log("auth", "USER_SIGNUP", f"{req.email} signed up (sales, unverified)", {"role": "sales"})
+        return _send_link(request, uid, req.email.strip().lower(), req.name, "verify")
+
+    @app.post("/api/auth/verify")
+    def auth_verify(req: TokenRequest, request: Request, response: Response):
+        u = store.consume_email_token(token_hash(req.token), "verify")
+        if not u:
+            raise HTTPException(400, "This link is invalid or has expired. Request a new one from the sign-in page.")
+        store.set_verified(u["id"])
+        audit.log("auth", "EMAIL_VERIFIED", f"{u['email']} verified their e-mail")
+        _login(response, request, u["id"])
+        return public_user(store.user_by_id(u["id"]))
+
+    @app.post("/api/auth/resend-verification")
+    def auth_resend(req: EmailRequest, request: Request):
+        u = store.user_by_email(req.email)
+        if u and u["active"] and not u["email_verified"]:
+            return _send_link(request, u["id"], u["email"], u["name"], "verify")
+        return {"ok": True, "email_sent": False}  # same answer either way: no account enumeration
+
+    @app.post("/api/auth/forgot")
+    def auth_forgot(req: EmailRequest, request: Request):
+        u = store.user_by_email(req.email)
+        if u and u["active"] and u["email"] != DEMO_EMAIL:
+            return _send_link(request, u["id"], u["email"], u["name"], "reset")
+        return {"ok": True, "email_sent": False}
+
+    @app.post("/api/auth/reset")
+    def auth_reset(req: ResetRequest, request: Request, response: Response):
+        check_password_strength(req.password)
+        u = store.consume_email_token(token_hash(req.token), "reset")
+        if not u:
+            raise HTTPException(400, "This link is invalid or has expired. Ask for a new one.")
+        store.update_user(u["id"], password_hash=hash_password(req.password))  # also ends other sessions
+        store.set_verified(u["id"])  # they proved they own the inbox
+        audit.log("auth", "PASSWORD_RESET", f"{u['email']} reset their password")
+        _login(response, request, u["id"])
+        return public_user(store.user_by_id(u["id"]))
 
     @app.post("/api/auth/demo")
     def auth_demo(request: Request, response: Response):
@@ -281,6 +376,8 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
         u = store.user_by_email(req.email)
         if not u or not u["active"] or not verify_password(req.password, u["password_hash"]):
             raise HTTPException(401, "Email or password is incorrect")
+        if not u["email_verified"]:
+            raise HTTPException(403, "Confirm your e-mail first. Use the link we sent when you signed up.")
         _login(response, request, u["id"])
         return public_user(u)
 
