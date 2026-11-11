@@ -21,7 +21,7 @@ export default function Contracts() {
   if (list.error) return <ErrorState error={list.error} onRetry={list.reload} />;
   return (
     <Stack gap={20}>
-      <PageHeader eyebrow="Workspace" title="Contracts" description="Every contract the agents have read, with its current stage."
+      <PageHeader title="Contracts" description="Everything the agents have read."
         actions={<Button variant="primary" icon={<FilePlus2 size={16} />} onClick={() => nav("/new")}>New contract</Button>} />
       <Row justify="between">
         <Segmented<Filter> label="Filter by stage" value={f} onChange={setF} options={[

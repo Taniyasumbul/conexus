@@ -13,6 +13,7 @@ export default function Evaluation() {
   const { eval_escalation: esc, eval_negotiation: neg } = ev.data;
   const cuad = (ev.data as any).eval_cuad;
   const llmEv = (ev.data as any).eval_llm;
+  const parsing = llmEv ? (llmEv.parsing_hybrid ?? llmEv.parsing) : null;
   if (!esc && !neg && !(ev.data as any).eval_cuad) return <EmptyState title="No evaluation results yet">Run <code>make eval</code> to produce them.</EmptyState>;
 
   const tA: Row[] = neg?.table_a_end_to_end ?? [];
@@ -24,7 +25,7 @@ export default function Evaluation() {
 
   return (
     <Stack gap={24}>
-      <PageHeader eyebrow="Research" title="Evaluation" description="Real-contract results (CUAD) first, then the synthetic pipeline benchmarks. Synthetic numbers validate the method; real-text numbers are the ones to trust." />
+      <PageHeader title="Evaluation" description="Real-contract results first, then the synthetic benchmarks." />
       <Alert tone="warning" title="Synthetic rule scores are an upper bound">The rule playbook and the synthetic labels come from the same guideline. On real CUAD text the rules alone catch only a small share of deal-breakers.</Alert>
 
       {neg && full && noGate && mem && cold && (
@@ -74,13 +75,13 @@ export default function Evaluation() {
         <>
           <h2>Language model experiments · {llmEv.model}</h2>
           <Card title="Can the Communication Agent read real customer replies?"
-            subtitle={`Share of ${llmEv.parsing.n_messages} messages parsed fully correctly (price, payment days, acceptance, clause responses), by writing style`} flush>
-            <Table rows={Object.keys(Object.values(llmEv.parsing.results as Record<string, any>)[0].by_style).map((style) => ({ style }))}
+            subtitle={`Share of ${parsing.n_messages} messages parsed fully correctly (price, payment days, acceptance, clause responses), by writing style${llmEv.parsing_hybrid ? ". LLM column = regex-first hybrid (post-hoc revision, same messages)" : ""}`} flush>
+            <Table rows={Object.keys(Object.values(parsing.results as Record<string, any>)[0].by_style).map((style) => ({ style }))}
               rowKey={(r) => r.style} columns={[
-                { key: "s", header: "Writing style", render: (r) => <Stack gap={2}><b>{titleCaseLocal(r.style)}</b><span className="nx-muted" style={{ fontSize: "var(--text-xs)" }}>{String(llmEv.parsing.examples[r.style]).slice(0, 110)}…</span></Stack> },
-                ...Object.keys(llmEv.parsing.results).map((parser) => ({
+                { key: "s", header: "Writing style", render: (r) => <Stack gap={2}><b>{titleCaseLocal(r.style)}</b><span className="nx-muted" style={{ fontSize: "var(--text-xs)" }}>{String(parsing.examples[r.style]).slice(0, 110)}…</span></Stack> },
+                ...Object.keys(parsing.results).map((parser) => ({
                   key: parser, header: parser, num: true,
-                  render: (r: { style: string }) => pct(llmEv.parsing.results[parser].by_style[r.style]),
+                  render: (r: { style: string }) => pct(parsing.results[parser].by_style[r.style]),
                 })),
               ]} />
           </Card>

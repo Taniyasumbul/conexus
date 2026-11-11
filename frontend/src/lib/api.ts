@@ -52,7 +52,17 @@ export interface AnnotateStats {
   pairs: { a: string; b: string; overlap: number; agreement: number | null; kappa: number | null }[];
   adjudicated: number; positives: number; proxy_agreement: number | null; model_agreement: number | null; export_path: string;
 }
-export interface AnnotationInput { clause_id: string; annotator: string; requires_human: boolean | null; level: RiskLevel | null; redlinable: boolean | null; note: string }
+export interface AnnotationInput { clause_id: string; requires_human: boolean | null; level: RiskLevel | null; redlinable: boolean | null; note: string }
+
+export type Role = "sales" | "legal" | "admin";
+export interface User { id: number; email: string; name: string; role: Role; active?: boolean; created_at?: number }
+export interface AuthStatus { setup_required: boolean; user: User | null; demo_enabled?: boolean }
+export interface ContractDocument { text: string; segments: { clause_id: string; start: number; body_start: number; end: number }[] }
+export interface PolicyField { name: string; description: string; default: unknown; type: "bool" | "int" | "float" | "choice"; ge?: number; le?: number; choices?: string[] }
+export interface Policy {
+  escalation: Record<string, number | boolean | string>; pricing: Record<string, number | boolean | string>;
+  schema: { escalation: PolicyField[]; pricing: PolicyField[] }; changed?: Record<string, unknown>;
+}
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }
@@ -68,9 +78,11 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
   } catch {
     throw new ApiError(0, "Can't reach the CoNexus API. Start it with `make api` (port 8000).");
   }
+  if (res.status === 401 && !path.startsWith("/api/auth")) window.dispatchEvent(new Event("nx:unauthorized"));
   if (!res.ok) {
     let detail = res.statusText;
     try { detail = (await res.json()).detail ?? detail; } catch { /* not json */ }
+    if (Array.isArray(detail)) detail = detail.map((d: any) => `${(d.loc ?? []).slice(-1)[0] ?? "value"}: ${d.msg}`).join("; ");
     throw new ApiError(res.status, typeof detail === "string" ? detail : JSON.stringify(detail));
   }
   return res.json() as Promise<T>;
@@ -85,14 +97,27 @@ export const api = {
   negotiate: (id: string, body: { mode: "simulated" | "email"; persona?: string; wtp?: number; delay_s?: number; counterparty_email?: string }) =>
     req<ContractState>("POST", `/api/contracts/${id}/negotiate`, body),
   reply: (id: string, message: string) => req<ContractState>("POST", `/api/contracts/${id}/reply`, { message }),
-  decide: (id: string, d: HumanDecision) => req<ContractState>("POST", `/api/contracts/${id}/decision`, d),
+  decide: (id: string, d: { approve: boolean; note: string }) => req<ContractState>("POST", `/api/contracts/${id}/decision`, d),
+  redlineUrl: (id: string) => `/api/contracts/${id}/redline.docx`,
+  authStatus: () => req<AuthStatus>("GET", "/api/auth/status"),
+  login: (email: string, password: string) => req<User>("POST", "/api/auth/login", { email, password }),
+  demo: () => req<User>("POST", "/api/auth/demo"),
+  document: (id: string) => req<ContractDocument>("GET", `/api/contracts/${id}/document`),
+  setup: (b: { email: string; name: string; password: string }) => req<User>("POST", "/api/auth/setup", b),
+  logout: () => req<{ ok: boolean }>("POST", "/api/auth/logout"),
+  users: () => req<User[]>("GET", "/api/users"),
+  createUser: (b: { email: string; name: string; role: Role; password: string }) => req<User>("POST", "/api/users", b),
+  updateUser: (id: number, b: Partial<{ name: string; role: Role; active: boolean; password: string }>) => req<User>("PATCH", `/api/users/${id}`, b),
+  policy: () => req<Policy>("GET", "/api/policy"),
+  savePolicy: (b: { escalation: Record<string, unknown>; pricing: Record<string, unknown> }) => req<Policy>("PUT", "/api/policy", b),
+  policyHistory: () => req<AuditEvent[]>("GET", "/api/policy/history"),
   inbox: () => req<InboxItem[]>("GET", "/api/escalations"),
   audit: (id: string) => req<AuditEvent[]>("GET", `/api/contracts/${id}/audit`),
   auditAll: (limit = 200) => req<AuditEvent[]>("GET", `/api/audit?limit=${limit}`),
   verify: () => req<Verify>("GET", "/api/audit/verify"),
   samples: () => req<Sample[]>("GET", "/api/samples"),
   evals: () => req<EvalResults>("GET", "/api/eval"),
-  annotateNext: (annotator: string) => req<AnnotateItem>("GET", `/api/annotate/next?annotator=${encodeURIComponent(annotator)}`),
+  annotateNext: () => req<AnnotateItem>("GET", "/api/annotate/next"),
   annotate: (a: AnnotationInput) => req<AnnotateReveal>("POST", "/api/annotate", a),
   annotateStats: () => req<AnnotateStats>("GET", "/api/annotate/stats"),
   outbox: () => req<{ to: string; subject: string; body: string; ts: number }[]>("GET", "/api/outbox"),

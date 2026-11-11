@@ -8,6 +8,8 @@ import { money } from "@lib/api";
 import { useTokens } from "@lib/hooks";
 import { Legend } from "../primitives";
 
+const reduceMotion = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
 const TOKENS = ["series-1", "series-2", "chart-grid", "fg-2", "fg-3", "border-strong", "surface"] as const;
 
 function ChartTooltip({ active, payload, label, fmt, labelFmt }: any) {
@@ -58,17 +60,17 @@ export function PriceChart({ history, plan, height = 280 }: { history: Offer[]; 
           <LineChart data={data} margin={{ top: 8, right: 96, bottom: 4, left: 8 }}>
             <CartesianGrid stroke={t["chart-grid"]} vertical={false} />
             <XAxis dataKey="round" {...axis} tickFormatter={(r) => (r === 0 ? "Open" : `R${r}`)} />
-            <YAxis {...axis} width={64} tickFormatter={(v) => money(v, true)} domain={domain} ticks={ticks} allowDataOverflow />
+            <YAxis {...axis} width={64} tickFormatter={(v) => (hi >= 100_000 ? money(v, true) : `$${(v / 1000).toFixed(v % 1000 ? 1 : 0)}K`)} domain={domain} ticks={ticks} allowDataOverflow />
             <Tooltip content={<ChartTooltip fmt={(v: number) => money(v)} labelFmt={(r: number) => (r === 0 ? "Their opening paper" : `Round ${r}`)} />}
               cursor={{ stroke: t["border-strong"], strokeWidth: 1 }} />
             {plan && <ReferenceLine y={plan.floor_price} stroke={t["fg-3"]} strokeDasharray="4 4"
-              label={{ value: `Floor ${money(plan.floor_price, true)}`, position: "right", fill: t["fg-2"], fontSize: 11 }} />}
+              label={{ value: `Floor ${money(plan.floor_price, hi >= 100_000)}`, position: "right", fill: t["fg-2"], fontSize: 11 }} />}
             {plan && plan.concession_limit > plan.floor_price && <ReferenceLine y={plan.concession_limit} stroke={t["fg-3"]} strokeDasharray="2 4"
-              label={{ value: `Limit ${money(plan.concession_limit, true)}`, position: "right", fill: t["fg-2"], fontSize: 11 }} />}
+              label={{ value: `Limit ${money(plan.concession_limit, hi >= 100_000)}`, position: "right", fill: t["fg-2"], fontSize: 11 }} />}
             <Line name="Our offer" dataKey="us" stroke={t["series-1"]} strokeWidth={2} connectNulls
-              dot={{ r: 4, fill: t["series-1"], stroke: t.surface, strokeWidth: 2 }} activeDot={{ r: 6, stroke: t.surface, strokeWidth: 2 }} isAnimationActive={false} />
+              dot={{ r: 4, fill: t["series-1"], stroke: t.surface, strokeWidth: 2 }} activeDot={{ r: 6, stroke: t.surface, strokeWidth: 2 }} isAnimationActive={!reduceMotion} animationDuration={650} animationEasing="ease-out" />
             <Line name="Their offer" dataKey="them" stroke={t["series-2"]} strokeWidth={2} connectNulls
-              dot={{ r: 4, fill: t["series-2"], stroke: t.surface, strokeWidth: 2 }} activeDot={{ r: 6, stroke: t.surface, strokeWidth: 2 }} isAnimationActive={false} />
+              dot={{ r: 4, fill: t["series-2"], stroke: t.surface, strokeWidth: 2 }} activeDot={{ r: 6, stroke: t.surface, strokeWidth: 2 }} isAnimationActive={!reduceMotion} animationDuration={650} animationEasing="ease-out" />
           </LineChart>
         </ResponsiveContainer>
       </div>

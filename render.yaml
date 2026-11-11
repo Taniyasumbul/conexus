@@ -11,9 +11,17 @@ services:
     envVars:
       - key: HOST
         value: 0.0.0.0
+      - key: CONEXUS_DEMO
+        value: "1"            # one-click "Try the demo" account (Legal role, sample deals)
       - key: CONEXUS_LLM
         value: offline        # set to "anthropic" + add ANTHROPIC_API_KEY to use Claude
       - key: ANTHROPIC_API_KEY
         sync: false           # secret: entered in the dashboard, never committed
       - key: SLACK_WEBHOOK_URL
+        sync: false
+      - key: CONEXUS_ADMIN_EMAIL     # first admin; set both before the first deploy,
+        sync: false                 # otherwise the first visitor sees the setup screen
+      - key: CONEXUS_ADMIN_PASSWORD
+        sync: false
+      - key: CONEXUS_WEBHOOK_TOKEN
         sync: false

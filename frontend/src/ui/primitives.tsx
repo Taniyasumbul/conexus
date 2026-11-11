@@ -1,6 +1,6 @@
 import {
   ButtonHTMLAttributes, CSSProperties, Fragment, InputHTMLAttributes, ReactNode, SelectHTMLAttributes,
-  TextareaHTMLAttributes, useId,
+  TextareaHTMLAttributes, useEffect, useId, useRef, useState,
 } from "react";
 import { AlertTriangle, CheckCircle2, Info, OctagonAlert, Inbox } from "lucide-react";
 
@@ -75,9 +75,13 @@ export function Card({ title, subtitle, actions, children, flush, flat, tone, cl
 }
 
 /* ---------------------------------------------------------------- stat */
-export function Stat({ label, value, hint, tone }: { label: string; value: ReactNode; hint?: ReactNode; tone?: "good" | "critical" }) {
+export type Tint = "violet" | "amber" | "rose" | "mint" | "sky";
+export function Stat({ label, value, hint, tone, icon, tint = "violet" }: {
+  label: string; value: ReactNode; hint?: ReactNode; tone?: "good" | "critical"; icon?: ReactNode; tint?: Tint;
+}) {
   return (
     <div className={cx("nx-card nx-stat", tone && `nx-stat--${tone}`)}>
+      {icon && <span className="nx-stat__icon" data-tint={tint} aria-hidden>{icon}</span>}
       <span className="nx-stat__label">{label}</span>
       <span className="nx-stat__value">{value}</span>
       {hint && <span className="nx-stat__hint">{hint}</span>}
@@ -249,4 +253,62 @@ export function Legend({ items }: { items: { label: string; color: string; dashe
       {items.map((i) => <span key={i.label}><i className={i.dashed ? "dashed" : undefined} style={{ background: i.color }} />{i.label}</span>)}
     </div>
   );
+}
+
+/* ---------------------------------------------------------------- switch / avatar / save bar */
+export function Switch({ checked, onChange, label, id, disabled }: { checked: boolean; onChange: (v: boolean) => void; label?: ReactNode; id?: string; disabled?: boolean }) {
+  return (
+    <label className="nx-switch" htmlFor={id}>
+      <input id={id} type="checkbox" role="switch" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
+      <span className="nx-switch__track" aria-hidden />
+      {label && <span>{label}</span>}
+    </label>
+  );
+}
+export function Avatar({ name, size = "md" }: { name: string; size?: "md" | "lg" }) {
+  const initials = name.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
+  return <span className={cx("nx-avatar", size === "lg" && "nx-avatar--lg")} aria-hidden>{initials || "?"}</span>;
+}
+export function SaveBar({ children, actions }: { children: ReactNode; actions: ReactNode }) {
+  return <div className="nx-savebar" role="region" aria-label="Unsaved changes"><span>{children}</span><Row gap={8}>{actions}</Row></div>;
+}
+
+/* ---------------------------------------------------------------- company mark */
+const TINTS: Tint[] = ["violet", "amber", "rose", "mint", "sky"];
+export function Company({ name, sub }: { name: string; sub?: ReactNode }) {
+  const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
+  const tint = TINTS[[...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % TINTS.length];
+  return (
+    <div className="nx-company">
+      <span className="nx-company__logo" style={{ background: `var(--tint-${tint})`, color: `var(--tint-${tint}-fg)` }} aria-hidden>{initials}</span>
+      <div style={{ minWidth: 0 }}>
+        <div className="nx-company__name">{name}</div>
+        {sub && <div className="nx-company__sub">{sub}</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- count-up number */
+const reducedMotion = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+/** Rolls a number up from 0 on mount, and from its previous value whenever it changes. */
+export function CountUp({ value, format = (n) => Math.round(n).toLocaleString(), duration = 800 }: {
+  value: number; format?: (n: number) => string; duration?: number;
+}) {
+  const [shown, setShown] = useState(reducedMotion() ? value : 0);
+  const from = useRef(reducedMotion() ? value : 0);
+  useEffect(() => {
+    if (reducedMotion()) { setShown(value); from.current = value; return; }
+    const start = performance.now(), a = from.current, b = value;
+    let raf = 0;
+    const tick = (t: number) => {
+      const k = Math.min(1, (t - start) / duration);
+      const v = a + (b - a) * (1 - Math.pow(1 - k, 3));
+      setShown(v);
+      if (k < 1) raf = requestAnimationFrame(tick); else from.current = b;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => { cancelAnimationFrame(raf); from.current = b; };
+  }, [value, duration]);
+  return <span className="nx-num">{format(shown)}</span>;
 }

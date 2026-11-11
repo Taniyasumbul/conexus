@@ -102,7 +102,7 @@ export default function Architecture() {
   }, [which]);
   return (
     <Stack gap={20}>
-      <PageHeader eyebrow="Research" title="Architecture" description="Six specialised agents coordinate over one persisted negotiation state. The Orchestrator owns the decision of when a human must step in." />
+      <PageHeader title="Architecture" description="Six agents, one shared state, one escalation policy." />
       <Segmented<Key> label="Diagram" value={which} onChange={setWhich} options={[
         { value: "system", label: "System" }, { value: "requests", label: "Request flow" }, { value: "states", label: "State machine" },
       ]} />

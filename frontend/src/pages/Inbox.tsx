@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ExternalLink, PartyPopper } from "lucide-react";
-import { Badge, Button, Card, EmptyState, KeyValue, PageHeader, RedlineDiff, Row, ScoreMeter, Skeleton, Stack } from "@ui";
+import { Badge, Button, Card, Company, EmptyState, KeyValue, PageHeader, RedlineDiff, ScoreMeter, Skeleton, Stack } from "@ui";
 import { ago, api, money, titleCase } from "@lib/api";
 import { useApi } from "@lib/hooks";
 import { DecisionPanel, ErrorState, EscalationSummary } from "./shared";
@@ -11,12 +11,11 @@ export default function Inbox({ onChange }: { onChange: () => void }) {
   if (inbox.error) return <ErrorState error={inbox.error} onRetry={inbox.reload} />;
   return (
     <Stack gap={20}>
-      <PageHeader eyebrow="Human in the loop" title="Escalation inbox"
-        description="Decisions the agents are not allowed to take alone. Each one is paused until you approve or reject it, and your decision is written to the audit ledger." />
+      <PageHeader title="Escalation inbox" description="Deals paused until a person decides." />
       {!inbox.data ? <Skeleton height={240} /> : inbox.data.length === 0 ? (
         <Card><EmptyState icon={<PartyPopper size={28} />} title="Nothing needs you right now">When a contract hits a deal-breaker clause, a rejected redline, new legal terms or the autonomy limit, it lands here.</EmptyState></Card>
       ) : inbox.data.map((it) => (
-        <Card key={it.id} tone="critical" title={<Row gap={10}>{it.customer}<span className="nx-mono nx-muted" style={{ fontSize: "var(--text-xs)" }}>{it.id}</span></Row>}
+        <Card key={it.id} tone="critical" title={<Company name={it.customer} sub={it.id} />}
           subtitle={`Escalated ${ago(it.updated_at)}`}
           actions={<Button size="sm" variant="ghost" icon={<ExternalLink size={14} />} onClick={() => nav(`/contracts/${it.id}`)}>Open contract</Button>}>
           <Stack gap={16}>

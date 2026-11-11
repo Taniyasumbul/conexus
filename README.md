@@ -43,8 +43,13 @@ Full diagrams (system, deployment, request flow, state machine) and the API refe
 make setup        # Python venv + deps (uv, Python 3.12) and web deps (Node 20+)
 make web-build    # build the React web app
 make api          # http://localhost:8000  (web app)  ·  /docs (API)
-make test         # 13 Python tests + web typecheck
+make test         # 29 Python tests + web typecheck
 ```
+
+**First sign-in:** with no accounts yet, the app shows a one-time setup screen that creates the first
+admin (or set `CONEXUS_ADMIN_EMAIL` + `CONEXUS_ADMIN_PASSWORD`, or run
+`conexus create-user you@company.com --name "You" --role admin`). Add the rest of the team under
+**Settings → Team**. There are no default passwords.
 
 During UI development run `make api` and `make web` (hot reload on http://localhost:5173).
 Or everything in one container: `docker compose up --build` -> http://localhost:8000.
@@ -52,6 +57,26 @@ Or everything in one container: `docker compose up --build` -> http://localhost:
 Demo flow: **New contract** -> pick a sample marked `[risky]` -> **Analyze contract** ->
 **Start negotiation** (try the *Hardball* buyer) -> watch the rounds and price chart live ->
 decide in the **Escalation inbox** -> verify the **Audit ledger**.
+
+## Access control, policy and exports
+
+| Role | Can |
+|---|---|
+| Sales | create contracts, start negotiations, record customer replies, export redlines |
+| Legal | everything Sales can, plus approve / reject escalations and label clauses |
+| Admin | everything Legal can, plus change the agents' policy and manage the team |
+
+- Passwords are PBKDF2-SHA256 hashed; sessions are HttpOnly cookies whose SHA-256 is all the server stores.
+- Escalation decisions, policy changes, user changes and exports are written to the audit chain with the
+  signed-in person's e-mail.
+- **Settings → Escalation / Pricing policy**: every threshold the agents use (risk threshold, autonomy
+  limit, maximum rounds, discount, payment terms, concession curve, ...) is editable by an Admin, validated
+  against safe bounds, applied immediately, and recorded with before/after values.
+- **Redlined .docx**: on any contract, download the customer's paper with every CoNexus redline as a real
+  Word tracked change (Accept / Reject works) and a margin comment explaining why.
+- Inbound e-mail webhook: `POST /api/contracts/{id}/reply` with header `X-Conexus-Webhook-Token`
+  equal to `CONEXUS_WEBHOOK_TOKEN`.
+- CI: GitHub Actions runs the Python tests, the web typecheck and build, and a Docker build on every push.
 
 ## Web app and component library
 
@@ -62,13 +87,16 @@ contract-specific ones (`ClauseCard`, `RedlineDiff`, `NegotiationThread`, `Price
 
 | Screen | Purpose |
 |---|---|
-| Overview | KPIs, pipeline by stage, decisions waiting, recent contracts |
+| Sign in / setup | Accounts and roles; one-time first-admin setup |
+| Overview | Greeting with what needs your role, KPIs, pipeline by stage, decisions waiting, recent contracts |
 | Contracts | Filter by stage, search |
 | New contract | Upload or pick a sample, deal context from CRM |
 | Contract | Live negotiation thread + price chart, clause risks with redlines, pricing & memory evidence, audit trail |
 | Escalation inbox | Approve / reject paused deals with a note for the audit log |
 | Audit ledger | Hash-chain verification, all decisions, reviewer notifications |
-| Evaluation | RO2-RO5 results: P/R threshold chart, memory ablation, baselines |
+| Settings | Escalation and pricing policy (Admin edits, everyone reads), team, change history |
+| Annotate clauses | Expert labelling of real CUAD clauses (Legal) |
+| Evaluation | RO2-RO5 results: CUAD real-text, held-out test, LLM experiments, memory ablation, baselines |
 | Architecture | System, request-flow and state-machine diagrams |
 | Component library | Every Nexus UI component and token |
 
@@ -131,13 +159,20 @@ Findings for the paper:
 Next: replace proxy labels with expert labels from the **Annotate** page (two annotators, Cohen's
 kappa, adjudication). `eval-cuad` and the deployed risk model pick them up automatically.
 
-### Language-model experiments (`CONEXUS_LLM=ollama conexus eval-llm`)
+### Language-model experiments (local Qwen2.5-3B via Ollama, `CONEXUS_LLM=ollama conexus eval-llm`)
 
-Reply parsing: 46 customer replies with known ground truth, in six hand-written styles (template,
-shorthand like "18.5k", numbers in words, e-mail, Indian business English, acceptances). Regex parses
-**100% of template messages and 0% of every natural style (22% overall)**, which is why the
-Communication Agent uses an LLM. `eval-llm` adds the LLM's score, LLM risk scoring on held-out CUAD
-clauses, and a single-monolithic-LLM negotiator vs CoNexus. Runs fully locally with Ollama.
+| Experiment | Result |
+|---|---|
+| Reply parsing, 46 replies in 6 hand-written styles | regex 22% (100% on template, 0% on natural styles) · LLM 39% · regex-first hybrid 41%* |
+| Risk on 60 held-out CUAD clauses (stratified) | hybrid without LLM **F1 0.86** · LLM alone 0.64 (flags almost everything) · hybrid+LLM 0.65 |
+| Negotiation, 10 contracts | single monolithic LLM: escalated all 10, closed none · CoNexus + LLM messaging: 60% agreed, surplus 0.76 · CoNexus offline: 50%, 0.59 |
+
+\* designed after seeing the first run, measured on the same messages.
+
+Takeaways: a small local model helps where text is unstructured, but must not decide escalations on
+its own, and a single monolithic LLM negotiator is far worse than specialised agents with a policy
+gate. The main parsing error is reading "we accept the change to clause 10" as accepting the whole
+deal; the next experiment is a stronger model (Claude) on the same harness. n=10 negotiations is small.
 
 ### RO3 - memory (synthetic, 180 contracts with a deal zone, risk gate off)
 

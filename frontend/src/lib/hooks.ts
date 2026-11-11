@@ -44,15 +44,16 @@ export function useApi<T>(fn: () => Promise<T>, deps: unknown[] = [], poll?: (da
 
 export type ThemePref = "system" | "light" | "dark";
 
+/** Light by default. Dark only when the person switches it on (stored per browser). */
+export function readTheme(): "light" | "dark" {
+  try { return localStorage.getItem("nx-mode") === "dark" ? "dark" : "light"; } catch { return "light"; }
+}
 export function useTheme(): [ThemePref, (t: ThemePref) => void] {
-  const [pref, setPref] = useState<ThemePref>(() => {
-    try { return (localStorage.getItem("nx-theme") as ThemePref) || "system"; } catch { return "system"; }
-  });
+  const [pref, setPref] = useState<ThemePref>(readTheme);
   useEffect(() => {
-    const root = document.documentElement;
-    if (pref === "system") root.removeAttribute("data-theme");
-    else root.setAttribute("data-theme", pref);
-    try { localStorage.setItem("nx-theme", pref); } catch { /* storage blocked */ }
+    const mode = pref === "dark" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", mode);
+    try { localStorage.setItem("nx-mode", mode); } catch { /* storage blocked */ }
   }, [pref]);
   return [pref, setPref];
 }
@@ -67,11 +68,32 @@ export function useTokens<K extends string>(names: readonly K[]): Record<K, stri
   useEffect(() => {
     const update = () => setVals(read());
     const mo = new MutationObserver(update);
-    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-palette"] });
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     mq.addEventListener("change", update);
     return () => { mo.disconnect(); mq.removeEventListener("change", update); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return vals;
+}
+
+export const PALETTES = ["ocean", "violet", "sunset", "emerald", "mono", "midnight"] as const;
+export type Palette = (typeof PALETTES)[number];
+
+export function readPalette(): Palette {
+  try {
+    const p = localStorage.getItem("nx-palette") as Palette | null;
+    return p && (PALETTES as readonly string[]).includes(p) ? p : "ocean";
+  } catch { return "ocean"; }
+}
+
+/** Colour palette, persisted per browser and applied on <html data-palette>. */
+export function usePalette(): [Palette, (p: Palette) => void] {
+  const [p, setP] = useState<Palette>(readPalette);
+  useEffect(() => {
+    document.documentElement.setAttribute("data-palette", p);
+    try { localStorage.setItem("nx-palette", p); } catch { /* storage blocked */ }
+    window.dispatchEvent(new Event("nx:palette"));
+  }, [p]);
+  return [p, setP];
 }

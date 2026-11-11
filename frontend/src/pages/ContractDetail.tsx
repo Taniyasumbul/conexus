@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Activity, BookOpenCheck, Gavel, MessagesSquare, Play, Send, TrendingUp } from "lucide-react";
+import { Activity, BookOpenCheck, FileDown, FileText, Gavel, MessagesSquare, Play, Send, TrendingUp } from "lucide-react";
 import {
+  AnalysisReveal, ContractFingerprint, DocumentView, PriceRuler, SignedCelebration, SignatureStamp as Stamp, usePrevious,
   Alert, AuditTimeline, Badge, Button, Card, ChoiceGroup, ClauseCard, DealStepper, EmptyState, Field, Grid, KeyValue,
   PageHeader, PriceChart, Range, Row, Segmented, SignatureStamp, Skeleton, Stack, Stat, StatusBadge, Table, Tabs, Textarea,
   useToast, NegotiationThread, Input,
@@ -10,13 +11,18 @@ import { api, ApiError, ContractState, money, titleCase } from "@lib/api";
 import { useApi } from "@lib/hooks";
 import { DecisionPanel, ErrorState, EscalationSummary } from "./shared";
 
-type Tab = "negotiation" | "clauses" | "pricing" | "audit";
+type Tab = "negotiation" | "document" | "clauses" | "pricing" | "audit";
 
 export default function ContractDetail({ onChange }: { onChange: () => void }) {
   const { id = "" } = useParams();
   const c = useApi(() => api.contract(id), [id], (d) => (d?.status === "awaiting_reply" && d.mode === "simulated" ? 900 : 4000));
   const audit = useApi(() => api.audit(id), [id, c.data?.updated_at]);
   const [tab, setTab] = useState<Tab>("negotiation");
+  const [docSel, setDocSel] = useState<string | null>(null);
+  const status = c.data?.status;
+  const prevStatus = usePrevious(status);
+  const [celebrate, setCelebrate] = useState(false);
+  useEffect(() => { if (prevStatus && prevStatus !== "signed" && status === "signed") setCelebrate(true); }, [status, prevStatus]);
 
   if (c.error) return <ErrorState error={c.error} onRetry={c.reload} />;
   if (!c.data) return <Stack><Skeleton height={60} /><Skeleton height={300} /></Stack>;
@@ -27,9 +33,20 @@ export default function ContractDetail({ onChange }: { onChange: () => void }) {
 
   return (
     <Stack gap={20}>
+      {celebrate && s.outcome?.final_terms && (
+        <SignedCelebration onDone={() => setCelebrate(false)}>
+          <Stamp envelope={s.outcome.envelope_id ?? ""} terms={s.outcome.final_terms} />
+        </SignedCelebration>
+      )}
       <PageHeader eyebrow={<span className="nx-mono">{s.id}</span>} title={ctx.customer}
         description={`${titleCase(ctx.segment)} · ${ctx.region.toUpperCase()} · ${titleCase(ctx.product)} × ${ctx.seats} seats · list ${money(ctx.list_price)}/yr${s.filename ? ` · ${s.filename}` : ""}`}
-        actions={<StatusBadge status={s.status} />} />
+        actions={<>
+          <StatusBadge status={s.status} />
+          <a className="nx-btn nx-btn--secondary" href={api.redlineUrl(s.id)} download
+            title="Word document with every redline as a tracked change and a margin comment explaining why">
+            <FileDown size={16} />Redlined .docx
+          </a>
+        </>} />
       <DealStepper status={s.status} everEscalated={s.human_decisions.length > 0 || s.status === "awaiting_human"} />
 
       {s.status === "awaiting_human" && s.escalation && (
@@ -51,6 +68,11 @@ export default function ContractDetail({ onChange }: { onChange: () => void }) {
       {s.status === "closed" && s.outcome && (
         <Alert tone="warning" title={`Closed: ${titleCase(s.outcome.status)}`}>After {s.outcome.rounds} rounds. {s.human_decisions.at(-1)?.note && `Reviewer note: “${s.human_decisions.at(-1)!.note}”`}</Alert>
       )}
+      {s.status === "analyzed" && (
+        <Card title="What the agents found" subtitle="Click any clause to read it in the document">
+          <AnalysisReveal clauses={s.clauses} risks={s.risks} onOpen={(cid) => { setDocSel(cid); setTab("document"); }} />
+        </Card>
+      )}
       {s.status === "analyzed" && <StartNegotiation s={s} onStarted={update} />}
       {s.status === "awaiting_reply" && s.mode === "email" && <ReplyBox id={s.id} onDone={update} />}
 
@@ -59,6 +81,7 @@ export default function ContractDetail({ onChange }: { onChange: () => void }) {
           <div style={{ padding: "0 var(--s-4)" }}>
             <Tabs<Tab> value={tab} onChange={setTab} tabs={[
               { value: "negotiation", label: "Negotiation", icon: <MessagesSquare size={15} />, count: Math.max(0, s.history.length - 1) },
+              { value: "document", label: "Document", icon: <FileText size={15} /> },
               { value: "clauses", label: "Clauses", icon: <Gavel size={15} />, count: s.clauses.length },
               { value: "pricing", label: "Pricing & memory", icon: <TrendingUp size={15} /> },
               { value: "audit", label: "Audit trail", icon: <BookOpenCheck size={15} />, count: audit.data?.length },
@@ -66,8 +89,13 @@ export default function ContractDetail({ onChange }: { onChange: () => void }) {
           </div>
           <div style={{ padding: "var(--s-5)" }}>
             {tab === "negotiation" && (s.history.length ? (
-              <Stack gap={24}><PriceChart history={s.history} plan={s.plan} /><NegotiationThread history={s.history} customer={ctx.customer} /></Stack>
+              <Stack gap={24}>
+                {s.plan && <PriceRuler history={s.history} plan={s.plan} agreed={s.status === "signed" ? s.outcome?.final_terms?.price : s.agreed_terms?.price} />}
+                <PriceChart history={s.history} plan={s.plan} />
+                <NegotiationThread history={s.history} customer={ctx.customer} />
+              </Stack>
             ) : <EmptyState icon={<Activity size={28} />} title="Negotiation hasn't started">Start it above. You will see every offer, counter-offer and the price path here.</EmptyState>)}
+            {tab === "document" && <DocumentTab s={s} initial={docSel} />}
             {tab === "clauses" && <ClauseList s={s} />}
             {tab === "pricing" && <PricingPanel s={s} />}
             {tab === "audit" && (audit.data?.length ? <AuditTimeline events={audit.data} /> : <EmptyState title="No audit events yet" />)}
@@ -84,8 +112,10 @@ export default function ContractDetail({ onChange }: { onChange: () => void }) {
               ["Channel", s.mode === "none" ? "Not started" : titleCase(s.mode)],
             ]} />
           </Card>
-          <Card title="Risk summary">
+          <Card title="Risk summary" subtitle="One bar per clause. Click to inspect.">
             <Stack gap={12}>
+              <ContractFingerprint clauses={s.clauses} risks={s.risks} onPick={() => setTab("clauses")}
+                resolved={(id) => s.reviewed_clauses.includes(id) || s.redline_results[id] === true} />
               <Row gap={8}>
                 {(() => {
                   const human = s.risks.filter((r) => r.requires_human);
@@ -238,4 +268,12 @@ function PricingPanel({ s }: { s: ContractState }) {
       )}
     </Stack>
   );
+}
+
+/* ------------------------------------------------------------------ document */
+function DocumentTab({ s, initial }: { s: ContractState; initial?: string | null }) {
+  const doc = useApi(() => api.document(s.id), [s.id]);
+  if (doc.error) return <ErrorState error={doc.error} onRetry={doc.reload} />;
+  if (!doc.data) return <Skeleton height={420} />;
+  return <DocumentView doc={doc.data} clauses={s.clauses} risks={s.risks} reviewed={s.reviewed_clauses} redlineResults={s.redline_results} initial={initial} />;
 }

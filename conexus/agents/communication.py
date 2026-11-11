@@ -70,12 +70,20 @@ class CommunicationAgent:
                     f"Pending clause ids: {pending_redlines}\n\nEmail:\n{message}",
                     _ParsedReply,
                 )
+                # Hybrid: deterministic extraction wins where it finds a value (exact on structured
+                # replies); the LLM fills only the gaps (shorthand, words, free-form e-mail).
+                rx = self._regex_parse(message, rnd, pending_redlines)
+                rx_days = re.search(r"net\s*(\d{2,3})", message.lower())
+                price = rx.terms.price if rx.terms else p.price
+                days = int(rx_days.group(1)) if rx_days else (p.payment_days or 30)
+                llm_rl = self._grounded({**{c: True for c in p.accepted_redlines}, **{c: False for c in p.rejected_redlines}},
+                                        message, pending_redlines)
                 return Offer(
-                    round=rnd, sender="them", message=message, accept=p.accept, walk_away=p.walk_away,
-                    terms=Terms(price=p.price, payment_days=p.payment_days or 30) if p.price else None,
-                    redline_responses=self._grounded({**{c: True for c in p.accepted_redlines}, **{c: False for c in p.rejected_redlines}},
-                                                     message, pending_redlines),
-                    new_legal_terms=p.new_legal_terms,
+                    round=rnd, sender="them", message=message, accept=rx.accept or p.accept,
+                    walk_away=rx.walk_away or p.walk_away,
+                    terms=Terms(price=price, payment_days=days) if price else None,
+                    redline_responses={**llm_rl, **rx.redline_responses},
+                    new_legal_terms=rx.new_legal_terms or p.new_legal_terms,
                 )
             except LLMError:
                 pass

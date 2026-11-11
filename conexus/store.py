@@ -39,6 +39,24 @@ CREATE TABLE IF NOT EXISTS annotations (
     ts             REAL NOT NULL,
     UNIQUE (clause_id, annotator)
 );
+CREATE TABLE IF NOT EXISTS users (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    email         TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    name          TEXT NOT NULL,
+    role          TEXT NOT NULL CHECK (role IN ('sales', 'legal', 'admin')),
+    password_hash TEXT NOT NULL,
+    active        INTEGER NOT NULL DEFAULT 1,
+    created_at    REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS sessions (
+    token_hash TEXT PRIMARY KEY,          -- sha256 of the cookie token; the raw token is never stored
+    user_id    INTEGER NOT NULL REFERENCES users(id),
+    expires_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS kv (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
 """
 
 
@@ -105,6 +123,57 @@ class Store:
     def annotations(self) -> list[sqlite3.Row]:
         with self.lock:
             return self.db.execute("SELECT * FROM annotations ORDER BY ts").fetchall()
+
+    # ------------------------------------------------------------ users & sessions
+    def _q(self, sql: str, args: tuple = (), one: bool = False, commit: bool = False):
+        with self.lock:
+            cur = self.db.execute(sql, args)
+            if commit:
+                self.db.commit()
+                return cur.lastrowid
+            return cur.fetchone() if one else cur.fetchall()
+
+    def user_count(self) -> int:
+        return self._q("SELECT COUNT(*) AS n FROM users", one=True)["n"]
+
+    def create_user(self, email: str, name: str, role: str, password_hash: str) -> int:
+        return self._q("INSERT INTO users (email, name, role, password_hash, created_at) VALUES (?,?,?,?,?)",
+                       (email.strip().lower(), name.strip(), role, password_hash, time.time()), commit=True)
+
+    def user_by_email(self, email: str):
+        return self._q("SELECT * FROM users WHERE email=?", (email.strip().lower(),), one=True)
+
+    def user_by_id(self, uid: int):
+        return self._q("SELECT * FROM users WHERE id=?", (uid,), one=True)
+
+    def users(self):
+        return self._q("SELECT id, email, name, role, active, created_at FROM users ORDER BY created_at")
+
+    def update_user(self, uid: int, **fields) -> None:
+        allowed = {k: v for k, v in fields.items() if k in ("name", "role", "active", "password_hash") and v is not None}
+        if allowed:
+            sets = ", ".join(f"{k}=?" for k in allowed)
+            self._q(f"UPDATE users SET {sets} WHERE id=?", (*allowed.values(), uid), commit=True)
+        if fields.get("active") == 0 or fields.get("password_hash"):
+            self._q("DELETE FROM sessions WHERE user_id=?", (uid,), commit=True)  # force re-login
+
+    def create_session(self, token_hash: str, uid: int, expires_at: float) -> None:
+        self._q("INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?,?,?)", (token_hash, uid, expires_at), commit=True)
+
+    def session_user(self, token_hash: str):
+        return self._q("SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id "
+                       "WHERE s.token_hash=? AND s.expires_at > ? AND u.active = 1", (token_hash, time.time()), one=True)
+
+    def delete_session(self, token_hash: str) -> None:
+        self._q("DELETE FROM sessions WHERE token_hash=?", (token_hash,), commit=True)
+
+    # ------------------------------------------------------------ key/value settings
+    def kv_get(self, key: str) -> str | None:
+        r = self._q("SELECT value FROM kv WHERE key=?", (key,), one=True)
+        return r["value"] if r else None
+
+    def kv_set(self, key: str, value: str) -> None:
+        self._q("INSERT INTO kv (key, value) VALUES (?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (key, value), commit=True)
 
     def all(self) -> list[sqlite3.Row]:
         with self.lock:
