@@ -370,3 +370,31 @@ def test_same_text_without_message_id_is_retry_only_within_window(client, monkey
     monkeypatch.setattr(srv, "REPLY_RETRY_WINDOW_S", 0)
     r3 = client.post(f"/api/contracts/{cid}/reply", json=body).json()
     assert r3["status"] != "awaiting_reply" or r3["round"] > r1["round"]  # a later repeat is a real reply
+
+
+def _upload(c, name, data):
+    return c.post("/api/contracts", data={"customer": "Acme", "segment": "smb", "region": "india", "product": "pro", "seats": 10},
+                  files={"file": (name, data)})
+
+
+def test_upload_limits(client, monkeypatch):
+    import conexus.api.limits as lim
+    monkeypatch.setattr(lim, "MAX_UPLOAD_BYTES", 1000)
+    monkeypatch.setattr(lim.read_upload, "__defaults__", (1000,))
+    assert _upload(client, "big.txt", b"a" * 1001).status_code == 413
+    assert _upload(client, "fake.pdf", b"this is not a pdf").status_code == 415
+    assert _upload(client, "fake.docx", b"plain text").status_code == 415
+    assert _upload(client, "empty.txt", b"   ").status_code == 400
+    assert _upload(client, "x.exe", b"MZ").status_code == 415
+
+
+def test_login_is_rate_limited(app):
+    c = TestClient(app)
+    codes = [c.post("/api/auth/login", json={"email": "nobody@x.io", "password": "wrong-password-1"}).status_code
+             for _ in range(12)]
+    assert codes[:10] == [401] * 10 and codes[-1] == 429
+
+
+def test_no_cross_origin_access_by_default(client):
+    r = client.get("/api/contracts", headers={"Origin": "https://evil.example"})
+    assert "access-control-allow-origin" not in {k.lower() for k in r.headers}
