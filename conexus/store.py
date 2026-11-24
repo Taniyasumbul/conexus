@@ -6,14 +6,13 @@ Backends
               data survives restarts and redeploys on hosts with ephemeral disks
 
 Each contract row holds the full NegotiationState as JSON (so any process can resume
-it), the source text, the channel mode, and - in simulation mode - the pickled
-simulated counterparty so its private state survives restarts. Only objects this
-process pickled itself are ever stored there.
+it), the source text, the channel mode, and - in simulation mode - a versioned JSON
+snapshot of the simulated counterparty so its private state survives restarts.
+(Older rows held a pickle; those are never unpickled, the simulation just stops.)
 """
 from __future__ import annotations
 
 import json
-import pickle
 import sqlite3
 import threading
 import time
@@ -212,7 +211,7 @@ class Store:
         sets, args = ["updated_at=?", "status=?", "state_json=?"], [time.time(), st.status, st.model_dump_json()]
         if sim is not None:
             sets.append("sim_blob=?")
-            args.append(pickle.dumps(sim))
+            args.append(json.dumps(sim.to_state()).encode())
         if mode is not None:
             sets.append("mode=?")
             args.append(mode)
@@ -229,8 +228,13 @@ class Store:
         return NegotiationState.model_validate_json(r["state_json"]) if r else None
 
     def sim(self, cid: str):
+        from .sim.counterparty import RuleCounterparty
+
         r = self.row(cid)
-        return pickle.loads(bytes(r["sim_blob"])) if r and r["sim_blob"] else None
+        blob = bytes(r["sim_blob"]) if r and r["sim_blob"] else b""
+        if not blob.startswith(b"{"):
+            return None  # nothing stored, or a legacy pickle: never deserialise arbitrary objects
+        return RuleCounterparty.from_state(json.loads(blob))
 
     def all(self):
         return self._q("SELECT * FROM contracts ORDER BY created_at DESC")
