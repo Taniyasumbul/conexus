@@ -226,7 +226,7 @@ tests/              unit + API tests
   qualitative runs and, if possible, a small human study.
 - **Time-to-close** comes from a parametric model (`TIME_MODEL` in `negotiation_eval.py`), not
   measurements.
-- **DocuSign is a stub**: the envelope is stored in the database (`GET /api/contracts/{id}/envelopes`)
+- **DocuSign is a stub**: the app shows agreed deals as "Sent to sign"; the envelope is stored in the database (`GET /api/contracts/{id}/envelopes`)
   but not sent to DocuSign. Slack and SMTP work once
   credentials are set.
 - **Claude/Ollama paths** are implemented but have not yet been run against live models.

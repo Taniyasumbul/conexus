@@ -259,7 +259,7 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
                          link, role="legal")
         elif st.status == "signed" and st.outcome and st.outcome.final_terms:
             t = st.outcome.final_terms
-            store.notify("signed", f"Deal signed with {who}", f"{_money(t.price)}/yr · net {t.payment_days} · {st.outcome.rounds} rounds", link)
+            store.notify("signed", f"Deal agreed with {who}, sent for signature", f"{_money(t.price)}/yr · net {t.payment_days} · {st.outcome.rounds} rounds", link)
         elif st.status == "closed" and st.outcome:
             label = {"rejected_by_human": "rejected by Legal", "walked_away": "customer walked away",
                      "no_agreement": "no agreement", "handed_off": "handed to a person"}.get(st.outcome.status, st.outcome.status)

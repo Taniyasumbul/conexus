@@ -361,7 +361,7 @@ Main environment variables (see `.env.example`):
   scores are optimistic.
 - **Simulated customers** are parametric. A small human study would strengthen RO3.
 - **Time-to-close** in the evaluation comes from a parametric model, not measurements.
-- **DocuSign is a stub.** Envelopes are stored in the database but not sent.
+- **DocuSign is a stub.** Agreed deals show as "Sent to sign"; envelopes are stored in the database but not sent, so nothing is legally signed.
 - **LLM experiments** used a small local model (Qwen2.5-3B, n = 10 negotiations). Claude is wired in
   but not yet evaluated on the same harness.
 

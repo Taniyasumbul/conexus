@@ -72,6 +72,9 @@ class ESignStub:
     def send_for_signature(self, contract_id: str, payload: dict) -> str:
         envelope_id = f"env-{uuid.uuid4().hex[:10]}"
         if self.sink is not None:
+            # a stub envelope is a signature *request*; nothing is legally signed until a real
+            # provider (DocuSign) reports completion
+            payload = {**payload, "provider": "stub", "signature_status": "requested"}
             self.sink.envelope_save(envelope_id, contract_id, payload)
             return envelope_id
         self.out_dir.mkdir(parents=True, exist_ok=True)
