@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from conexus.api.auth import hash_password
 from conexus.api.server import create_app
 from conexus.config import DATA, get_settings
+from conexus.integrations.crm import CRMStore
 
 PW = "correct-horse-battery"
 
@@ -98,8 +99,11 @@ def test_human_in_the_loop_reject_and_approve(client):
 def test_email_mode_with_reply_webhook(client):
     r = _sample(lambda r: not r["should_escalate"])
     cid = _create(client, r)["id"]
-    st = client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email"}).json()
+    st = client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email", "counterparty_email": " Buyer@Acme.io "}).json()
     assert st["status"] == "awaiting_reply" and st["round"] == 1
+    assert st["context"]["contact_email"] == "buyer@acme.io"
+    # the offer goes to the person, not to the company's display name
+    assert client.app.state.email_orch.outbound.sent[-1]["to"] == "buyer@acme.io"
     price = st["last_our_offer"]["price"]
     st = client.post(f"/api/contracts/{cid}/reply", json={"message": f"We accept your proposal of ${price:,.0f}. Deal."}).json()
     assert st["status"] in ("signed", "awaiting_human")
@@ -112,8 +116,16 @@ def test_email_mode_with_reply_webhook(client):
 def test_cannot_start_twice(client):
     r = _sample(lambda r: not r["should_escalate"])
     cid = _create(client, r)["id"]
-    client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email"})
-    assert client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email"}).status_code == 409
+    client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email", "counterparty_email": "a@b.io"})
+    assert client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email", "counterparty_email": "a@b.io"}).status_code == 409
+
+
+@pytest.mark.parametrize("email", [None, "", "Acme Corp", "a@b"])
+def test_email_mode_needs_a_real_address(client, email):
+    cid = _create(client, _sample(lambda r: not r["should_escalate"]))["id"]
+    r = client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email", "counterparty_email": email})
+    assert r.status_code == 422
+    assert client.get(f"/api/contracts/{cid}").json()["status"] == "analyzed"  # nothing was sent
 
 
 @pytest.mark.skipif(not (DATA / "cuad" / "clauses.jsonl").exists(), reason="CUAD not downloaded")
@@ -205,7 +217,7 @@ def test_reply_webhook_token(app, monkeypatch):
     monkeypatch.setenv("CONEXUS_WEBHOOK_TOKEN", "hook-secret")
     c = login(app, "sales@x.io")
     cid = _create(c, _sample(lambda r: not r["should_escalate"]))["id"]
-    c.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email"})
+    c.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email", "counterparty_email": "a@b.io"})
     anon = TestClient(app)
     assert anon.post(f"/api/contracts/{cid}/reply", json={"message": "hi"}).status_code == 401
     ok = anon.post(f"/api/contracts/{cid}/reply", json={"message": "Our counter-proposal is $1,000 per year, net 30."},
@@ -318,3 +330,71 @@ def test_analytics_shape(client):
     assert len(a["days"]) == 14 and a["totals"]["contracts"] == 1
     assert sum(d["analyzed"] for d in a["days"]) == 1
     assert len(a["rounds"]) == 8
+
+
+def test_crm_memory_and_envelopes_persist(tmp_path):
+    """A signed deal's CRM write-back and its e-sign envelope live in the database and survive a restart."""
+    from conexus.store import Store
+
+    db = tmp_path / "mem.db"
+    s = get_settings(llm_provider="offline")
+    app = create_app(s, db, tmp_path / "a.jsonl", labels_export=tmp_path / "e.jsonl")
+    store = app.state.store
+    base = len(CRMStore.from_csv(s.crm_path).deals)
+    store.crm_append({"deal_id": "cx-1", "segment": "smb", "region": "india", "product": "pro", "seats": 10,
+                      "list_price": 1000.0, "final_price": 900.0, "payment_days": 30, "term_months": 12,
+                      "won": True, "rounds": 3})
+    store.envelope_save("env-abc", "cx-1", {"customer": "Acme"})
+    app2 = create_app(s, db, tmp_path / "a.jsonl", labels_export=tmp_path / "e.jsonl")
+    crm = app2.state.crm
+    assert len(crm.deals) == base + 1 and crm.deals[-1].deal_id == "cx-1"
+    assert Store(db).envelopes("cx-1")[0]["customer"] == "Acme"
+
+
+def test_duplicate_webhook_reply_is_applied_once(client):
+    cid = _create(client, _sample(lambda r: not r["should_escalate"]))["id"]
+    client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email", "counterparty_email": "a@b.io"})
+    body = {"message": "Our counter-proposal is $1,000 per year, net 30.", "message_id": "<abc@mail>"}
+    first = client.post(f"/api/contracts/{cid}/reply", json=body).json()
+    again = client.post(f"/api/contracts/{cid}/reply", json=body).json()
+    assert again["round"] == first["round"] and len(again["history"]) == len(first["history"])
+
+
+def test_same_text_without_message_id_is_retry_only_within_window(client, monkeypatch):
+    import conexus.api.server as srv
+    cid = _create(client, _sample(lambda r: not r["should_escalate"]))["id"]
+    client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email", "counterparty_email": "a@b.io"})
+    body = {"message": "Our counter-proposal is $1,000 per year, net 30."}
+    r1 = client.post(f"/api/contracts/{cid}/reply", json=body).json()
+    assert client.post(f"/api/contracts/{cid}/reply", json=body).json()["round"] == r1["round"]  # retry ignored
+    monkeypatch.setattr(srv, "REPLY_RETRY_WINDOW_S", 0)
+    r3 = client.post(f"/api/contracts/{cid}/reply", json=body).json()
+    assert r3["status"] != "awaiting_reply" or r3["round"] > r1["round"]  # a later repeat is a real reply
+
+
+def _upload(c, name, data):
+    return c.post("/api/contracts", data={"customer": "Acme", "segment": "smb", "region": "india", "product": "pro", "seats": 10},
+                  files={"file": (name, data)})
+
+
+def test_upload_limits(client, monkeypatch):
+    import conexus.api.limits as lim
+    monkeypatch.setattr(lim, "MAX_UPLOAD_BYTES", 1000)
+    monkeypatch.setattr(lim.read_upload, "__defaults__", (1000,))
+    assert _upload(client, "big.txt", b"a" * 1001).status_code == 413
+    assert _upload(client, "fake.pdf", b"this is not a pdf").status_code == 415
+    assert _upload(client, "fake.docx", b"plain text").status_code == 415
+    assert _upload(client, "empty.txt", b"   ").status_code == 400
+    assert _upload(client, "x.exe", b"MZ").status_code == 415
+
+
+def test_login_is_rate_limited(app):
+    c = TestClient(app)
+    codes = [c.post("/api/auth/login", json={"email": "nobody@x.io", "password": "wrong-password-1"}).status_code
+             for _ in range(12)]
+    assert codes[:10] == [401] * 10 and codes[-1] == 429
+
+
+def test_no_cross_origin_access_by_default(client):
+    r = client.get("/api/contracts", headers={"Origin": "https://evil.example"})
+    assert "access-control-allow-origin" not in {k.lower() for k in r.headers}

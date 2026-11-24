@@ -37,7 +37,7 @@ export default function AnalyticsPage() {
     <Stack gap={20}>
       <PageHeader title="Analytics" description="How the agents are performing over the last 14 days." />
       <Grid min={200}>
-        <Stat icon={<BadgeDollarSign />} tint="violet" label="Signed per year" value={money(d.totals.value, true)} hint={`${d.totals.signed} deals signed`} />
+        <Stat icon={<BadgeDollarSign />} tint="violet" label="Agreed per year" value={money(d.totals.value, true)} hint={`${d.totals.signed} deals agreed`} />
         <Stat icon={<FileSignature />} tint="mint" label="Close rate" value={pct(d.totals.signed / d.totals.contracts)} hint={`of ${d.totals.contracts} contracts`} />
         <Stat icon={<Clock3 />} tint="sky" label="Median time to close" value={duration(d.time_to_close_minutes.median)}
           hint={`fastest ${duration(d.time_to_close_minutes.fastest)}`} />
@@ -46,8 +46,8 @@ export default function AnalyticsPage() {
       </Grid>
 
       <div className="nx-split">
-        <Card title="Activity" subtitle="Contracts analysed and deals signed per day"><ActivityChart data={d.days} /></Card>
-        <Card title="Signed value" subtitle="Annual contract value signed per day"><ValueArea data={d.days} /></Card>
+        <Card title="Activity" subtitle="Contracts analysed and deals agreed per day"><ActivityChart data={d.days} /></Card>
+        <Card title="Agreed value" subtitle="Annual contract value agreed per day"><ValueArea data={d.days} /></Card>
       </div>
 
       <Grid min={320}>

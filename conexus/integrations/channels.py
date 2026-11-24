@@ -50,6 +50,8 @@ class EmailChannel(Channel):
         self.password = os.environ["SMTP_PASSWORD"]
 
     def send(self, to, subject, body):
+        if "@" not in (to or ""):
+            raise ValueError(f"not an e-mail address: {to!r}")
         msg = EmailMessage()
         msg["From"], msg["To"], msg["Subject"] = self.user, to, subject
         msg.set_content(body)
@@ -60,11 +62,21 @@ class EmailChannel(Channel):
 
 
 class ESignStub:
-    def __init__(self, out_dir: Path):
+    """sink: optional object with envelope_save(envelope_id, contract_id, payload) (the Store), used
+    instead of files so envelopes survive redeploys."""
+
+    def __init__(self, out_dir: Path, sink=None):
         self.out_dir = Path(out_dir)
+        self.sink = sink
 
     def send_for_signature(self, contract_id: str, payload: dict) -> str:
         envelope_id = f"env-{uuid.uuid4().hex[:10]}"
+        if self.sink is not None:
+            # a stub envelope is a signature *request*; nothing is legally signed until a real
+            # provider (DocuSign) reports completion
+            payload = {**payload, "provider": "stub", "signature_status": "requested"}
+            self.sink.envelope_save(envelope_id, contract_id, payload)
+            return envelope_id
         self.out_dir.mkdir(parents=True, exist_ok=True)
         (self.out_dir / f"{contract_id}_{envelope_id}.json").write_text(json.dumps(payload, indent=2, default=str))
         return envelope_id

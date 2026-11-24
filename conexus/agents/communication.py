@@ -9,6 +9,19 @@ from pydantic import BaseModel
 from ..llm import LLM, LLMError
 from ..models import ClauseRisk, Offer, Terms
 
+# Acceptance must be explicit: a bare "deal" also appears in "no longer interested in this deal".
+ACCEPT = re.compile(
+    r"\b(?:we|i)\s+(?:hereby\s+|happily\s+|gladly\s+)?(?:accept|agree to)\s+(?:your|the|this)\s+(?:proposal|offer|terms|price)\b"
+    r"|\b(?:we have|we've got|it'?s|that'?s)\s+a\s+deal\b"
+    r"|(?:^|[.!?]\s*)deal\s*[.!]"
+    r"|\blet'?s\s+(?:sign|proceed|close)\b")
+NEGATED_ACCEPT = re.compile(r"\b(?:not|never|cannot|can't|won't|will not|do not|don't|unable to)\s+(?:\w+\s+){0,2}(?:accept|agree)")
+WALK_AWAY = re.compile(
+    r"walk(?:ing)? away|end (?:these|our|the) (?:discussions|negotiations?|talks)|no longer interested|not interested"
+    r"|(?:will|we'll|we will|have decided to) (?:pass|decline)|declin(?:e|ing) (?:your|the) (?:offer|proposal)"
+    r"|not (?:be )?(?:moving|going) forward|(?:go|going|gone) with (?:another|a different) (?:vendor|supplier|provider)"
+    r"|(?:call|calling) (?:it|this) off")
+
 LEGAL_TERMS = re.compile(r"exclusiv|non-compete|indemn|unlimited liability|intellectual property|source code|audit", re.I)
 
 
@@ -113,8 +126,8 @@ class CommunicationAgent:
         return Offer(
             round=rnd, sender="them", message=message,
             terms=Terms(price=float(price.group(1).replace(",", "")), payment_days=int(days.group(1)) if days else 30) if price else None,
-            accept=bool(re.search(r"\bwe accept your (proposal|offer)\b|\bdeal\b", low)),
-            walk_away=bool(re.search(r"walk away|end (these|our) discussions|no longer interested", low)),
+            accept=bool(ACCEPT.search(low)) and not NEGATED_ACCEPT.search(low),
+            walk_away=bool(WALK_AWAY.search(low)),
             redline_responses=responses,
             new_legal_terms=bool(re.search(r"(we|also) (require|need|insist)[^.]*", low)) and bool(LEGAL_TERMS.search(low)),
         )

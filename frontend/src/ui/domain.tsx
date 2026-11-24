@@ -13,7 +13,7 @@ const STATUS: Record<Status, { tone: Tone; label: string; icon: ReactNode }> = {
   analyzed: { tone: "neutral", label: "Analyzed", icon: <FileSearch /> },
   awaiting_reply: { tone: "info", label: "Negotiating", icon: <MessageSquareReply /> },
   awaiting_human: { tone: "critical", label: "Needs human", icon: <Hand /> },
-  signed: { tone: "good", label: "Signed", icon: <FileSignature /> },
+  signed: { tone: "good", label: "Sent to sign", icon: <FileSignature /> },
   closed: { tone: "neutral", label: "Closed", icon: <XCircle /> },
 };
 export function StatusBadge({ status }: { status: Status }) {
@@ -207,7 +207,7 @@ export function HashChip({ hash, chars = 10 }: { hash: string; chars?: number })
 }
 
 /* ---------------------------------------------------------------- lifecycle stepper */
-const STEPS = ["Ingest", "Risk review", "Negotiate", "Human gate", "Signed"] as const;
+const STEPS = ["Ingest", "Risk review", "Negotiate", "Human gate", "E-signature"] as const;
 export function DealStepper({ status, everEscalated }: { status: Status; everEscalated: boolean }) {
   const idx = { analyzed: 1, awaiting_reply: 2, awaiting_human: 3, signed: 4, closed: 4 }[status];
   return (
@@ -220,7 +220,7 @@ export function DealStepper({ status, everEscalated }: { status: Status; everEsc
         if (status === "closed" && i === 4) state = "current";
         return (
           <span key={s} className="nx-step" data-state={state}>
-            <b>{state === "done" ? "✓" : i + 1}</b>{s === "Signed" && status === "closed" ? "Closed" : s}
+            <b>{state === "done" ? "✓" : i + 1}</b>{s === "E-signature" && status === "closed" ? "Closed" : s}
           </span>
         );
       })}

@@ -12,6 +12,7 @@ Escalation kinds and what a human "approve" means:
     redline_rejected    (in_negotiation)  reviewer accepts clause as drafted   -> continue
     new_legal_terms     (in_negotiation)  reviewer accepts the new terms       -> continue
     no_deal_high_value  (in_negotiation)  a human takes over the deal          -> handed_off
+    unclear_reply       (in_negotiation)  reviewer decides the reply was not an exit -> continue
     value_limit         (pre_signature)   reviewer approves the agreed deal    -> sign
 "Reject" always closes the deal.
 """
@@ -151,7 +152,7 @@ class Orchestrator:
 
         if st.their_last and not open_rl and self.pricing.acceptable(st.plan, st.their_last, ours):
             msg = self.comms.compose(st.their_last, rnd, accept=True, customer=ctx.customer)
-            self.outbound.send(ctx.customer, "Re: Subscription agreement", msg)
+            self.outbound.send(ctx.contact_email or ctx.customer, "Re: Subscription agreement", msg)
             st.history.append(Offer(round=rnd, sender="us", terms=st.their_last, message=msg, accept=True))
             st.round = rnd
             self._log(st, "sales_pricing", "ACCEPT_OFFER",
@@ -159,7 +160,7 @@ class Orchestrator:
             return self._agree(st, st.their_last)
 
         msg = self.comms.compose(ours, rnd, open_rl, customer=ctx.customer)
-        self.outbound.send(ctx.customer, "Re: Subscription agreement", msg)
+        self.outbound.send(ctx.contact_email or ctx.customer, "Re: Subscription agreement", msg)
         st.history.append(Offer(round=rnd, sender="us", terms=ours, message=msg))
         st.round, st.last_our_offer = rnd, ours
         st.last_sent_redlines = [r.clause_id for r in open_rl]
@@ -192,8 +193,20 @@ class Orchestrator:
             st.their_last = theirs.terms
         if theirs.new_legal_terms and esc.escalate_on_new_legal_terms and self.use_risk_gate:
             return self._escalate(st, "in_negotiation", "new_legal_terms", ["counterparty introduced new legal terms"], 0.9)
+        if theirs.accept and theirs.walk_away:
+            # conflicting signals: a person reads the reply; the agents never sign on a guess
+            return self._escalate(st, "in_negotiation", "unclear_reply",
+                                  ["reply reads as both accepting and ending the negotiation"], 0.8)
         if theirs.accept:
-            return self._agree(st, st.last_our_offer)
+            ours = st.last_our_offer
+            if ours is None:
+                return self._escalate(st, "in_negotiation", "unclear_reply", ["acceptance received before any offer was sent"], 0.8)
+            if theirs.terms and abs(theirs.terms.price - ours.price) > 0.01 * ours.price:
+                # "we accept at $X" with a different price is a counter-offer, not acceptance of our offer
+                self._log(st, "orchestrator", "ACCEPT_MISMATCH",
+                          f"customer accepted at ${theirs.terms.price:,.0f} but our pending offer is ${ours.price:,.0f}; treated as counter-offer")
+                return self._next_turn(st)
+            return self._agree(st, ours)
         if theirs.walk_away:
             return self._fail(st, "counterparty walked away")
         return self._next_turn(st)
@@ -217,7 +230,7 @@ class Orchestrator:
         if kind == "redline_rejected":
             st.reviewed_clauses += [c for c, ok in st.redline_results.items() if not ok]
             return self._next_turn(st)
-        if kind == "new_legal_terms":
+        if kind in ("new_legal_terms", "unclear_reply"):
             return self._next_turn(st)
         if kind == "value_limit":
             return self._sign(st, st.agreed_terms)
