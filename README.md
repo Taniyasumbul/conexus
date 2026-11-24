@@ -32,7 +32,7 @@ Full diagrams (system, deployment, request flow, state machine) and the API refe
 | Research objective | Component | Code |
 |---|---|---|
 | RO1 multi-agent coordination over shared state | 6 agents + Orchestrator over `NegotiationState` | [conexus/agents/](conexus/agents/), [orchestrator.py](conexus/orchestrator.py) |
-| RO2 risk-gated escalation policy | Hybrid rules + ML + LLM risk scoring; 5 escalation kinds | [risk.py](conexus/agents/risk.py), [orchestrator.py](conexus/orchestrator.py) |
+| RO2 risk-gated escalation policy | Hybrid rules + ML + LLM risk scoring; 6 escalation kinds | [risk.py](conexus/agents/risk.py), [orchestrator.py](conexus/orchestrator.py) |
 | RO3 memory-augmented negotiation | WTP estimate from similar CRM deals bounds anchor and concessions | [memory.py](conexus/agents/memory.py), [pricing.py](conexus/agents/pricing.py) |
 | RO4 audit & explainability | SHA-256 hash-chained append-only log with rationale per decision | [audit.py](conexus/agents/audit.py) |
 | RO5 empirical evaluation | Baselines, ablations, precision/recall, simulated counterparties | [conexus/evaluation/](conexus/evaluation/) |

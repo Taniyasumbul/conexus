@@ -2,7 +2,7 @@
 
 export type Status = "analyzed" | "awaiting_reply" | "awaiting_human" | "signed" | "closed";
 export type RiskLevel = "low" | "medium" | "high";
-export type EscalationKind = "risky_clause" | "redline_rejected" | "new_legal_terms" | "no_deal_high_value" | "value_limit" | "none";
+export type EscalationKind = "risky_clause" | "redline_rejected" | "new_legal_terms" | "no_deal_high_value" | "value_limit" | "unclear_reply" | "none";
 
 export interface Terms { price: number; payment_days: number; term_months: number }
 export interface DealContext { customer: string; segment: string; region: string; product: string; seats: number; list_price: number }

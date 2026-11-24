@@ -105,7 +105,7 @@ class Offer(BaseModel):
     new_legal_terms: bool = False
 
 
-EscalationKind = Literal["risky_clause", "redline_rejected", "new_legal_terms", "no_deal_high_value", "value_limit", "none"]
+EscalationKind = Literal["risky_clause", "redline_rejected", "new_legal_terms", "no_deal_high_value", "value_limit", "unclear_reply", "none"]
 
 
 class EscalationDecision(BaseModel):

@@ -226,6 +226,7 @@ Interactive OpenAPI docs: `http://localhost:8000/docs`.
 | `redline_rejected` | in-negotiation | counterparty rejects redline on a risk-critical clause | clause accepted as drafted, negotiation continues |
 | `new_legal_terms` | in-negotiation | counterparty introduces new legal obligations | new terms accepted, negotiation continues |
 | `no_deal_high_value` | in-negotiation | talks fail on a deal above the high-value threshold | a human takes the deal over |
+| `unclear_reply` | in-negotiation | reply both accepts and ends talks, or accepts before any offer | reply was not an exit, negotiation continues |
 | `value_limit` | pre-signature | agreed value above the autonomy limit | deal is signed |
 
 "Reject" always closes the deal. All thresholds live in `conexus/config.py` (`EscalationPolicyConfig`).

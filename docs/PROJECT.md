@@ -30,7 +30,7 @@ policy**, and the pricing is grounded in **memory** of real outcomes rather than
 | # | Objective | How CoNexus addresses it | Where |
 |---|---|---|---|
 | RO1 | Multi-agent coordination over shared state | 6 agents + an event-driven Orchestrator over one `NegotiationState` | `conexus/agents/`, `conexus/orchestrator.py` |
-| RO2 | Risk-gated escalation | Hybrid risk scoring (hard rules + safe harbours + ML, combined with `max`), 5 escalation kinds | `agents/risk.py`, `orchestrator.py` |
+| RO2 | Risk-gated escalation | Hybrid risk scoring (hard rules + safe harbours + ML, combined with `max`), 6 escalation kinds | `agents/risk.py`, `orchestrator.py` |
 | RO3 | Memory-augmented negotiation | Willingness-to-pay estimate from similar CRM deals sets the anchor and the concession floor | `agents/memory.py`, `agents/pricing.py` |
 | RO4 | Audit and explainability | SHA-256 hash-chained append-only log, with a rationale on every decision | `agents/audit.py` |
 | RO5 | Empirical evaluation | Real contracts (CUAD), baselines, ablations, LLM experiments, simulated buyers | `conexus/evaluation/` |
@@ -107,6 +107,7 @@ stateDiagram-v2
 | `redline_rejected` | during | Customer rejects a redline on a risk-critical clause | Clause accepted as drafted |
 | `new_legal_terms` | during | Customer adds new legal obligations | New terms accepted |
 | `no_deal_high_value` | during | Talks fail on a deal above the high-value threshold | A person takes over |
+| `unclear_reply` | during | Reply both accepts and ends the talks, or accepts before any offer | It was not an exit, negotiation continues |
 | `value_limit` | before signing | Agreed value is above the autonomy limit | Deal is signed |
 
 "Reject" always closes the deal.
