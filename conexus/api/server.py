@@ -17,8 +17,10 @@ Interactive docs: http://localhost:8000/docs
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import re
 import secrets
 import tempfile
 import threading
@@ -50,16 +52,21 @@ from .auth import (COOKIE, ROLES, SESSION_TTL, check_password_strength, current_
                    public_user, require, seed_admin_from_env, token_hash, verify_password)
 
 
+REPLY_RETRY_WINDOW_S = 600
+EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[a-z]{2,}", re.I)
+
+
 class NegotiateRequest(BaseModel):
     mode: Literal["simulated", "email"] = "simulated"
     persona: Literal["cooperative", "hardball", "deadline"] = "cooperative"
     wtp: float | None = Field(None, description="Simulated buyer's private max annual price (simulated mode)")
     delay_s: float = Field(1.0, ge=0, le=30, description="Pause between simulated rounds, for live demos")
-    counterparty_email: str | None = None
+    counterparty_email: str | None = Field(None, max_length=254, description="Customer contact for e-mail mode")
 
 
 class ReplyRequest(BaseModel):
-    message: str
+    message: str = Field(..., min_length=1, max_length=20_000)
+    message_id: str | None = Field(None, max_length=300, description="Mail provider's Message-ID; makes retries safe")
 
 
 class AnnotationRequest(BaseModel):
@@ -201,6 +208,7 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
                   description="Risk-aware, memory-augmented multi-agent B2B contract negotiation")
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
     app.state.store, app.state.audit, app.state.crm = store, audit, crm
+    app.state.email_orch = email_orch
 
     def orch_for(cid: str) -> Orchestrator:
         row = store.row(cid)
@@ -551,6 +559,10 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
                 store.save(st, sim=cp)
                 bg.add_task(drive, cid)
             else:
+                to = (req.counterparty_email or st.context.contact_email or "").strip().lower()
+                if not EMAIL_RE.fullmatch(to):
+                    raise HTTPException(422, "E-mail mode needs the customer's e-mail address")
+                st.context.contact_email = to
                 store.save(st, mode="email")
                 st = email_orch.start(st)
                 store.save(st)
@@ -567,10 +579,22 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
             st = load(cid)
             if store.row(cid)["mode"] != "email":
                 raise HTTPException(409, "replies are only accepted for e-mail mode negotiations")
+            # providers retry webhooks: the same reply must not move the negotiation twice. A provider
+            # Message-ID is exact; without one, identical text within 10 minutes counts as a retry
+            # (a customer may legitimately repeat the same counter-offer later).
+            now = time.time()
+            if req.message_id:
+                reply_id, seen = "id:" + req.message_id, st.processed_replies.get("id:" + req.message_id) is not None
+            else:
+                reply_id = "text:" + hashlib.sha256(" ".join(req.message.split()).encode()).hexdigest()
+                seen = now - st.processed_replies.get(reply_id, 0) < REPLY_RETRY_WINDOW_S
+            if seen:
+                return view(st)
             try:
                 st = email_orch.on_reply(st, req.message)
             except ValueError as e:
                 raise HTTPException(409, str(e))
+            st.processed_replies[reply_id] = now
             store.save(st)
         return view(st)
 

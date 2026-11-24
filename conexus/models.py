@@ -64,6 +64,7 @@ class DealContext(BaseModel):
     product: Literal["core", "pro", "suite"]
     seats: int
     list_price: float  # annual list price for the whole deal
+    contact_email: str | None = None  # where offers go in e-mail mode; `customer` is only the display name
 
 
 class DealRecord(BaseModel):
@@ -155,6 +156,7 @@ class NegotiationState(BaseModel):
     last_sent_redlines: list[str] = []    # redlines still open in the last message
     redline_results: dict[str, bool] = {}
     reviewed_clauses: list[str] = []      # cleared by a human reviewer
+    processed_replies: dict[str, float] = {}  # inbound reply id -> time applied (idempotent webhook)
     round: int = 0
     their_last: Terms | None = None
     last_our_offer: Terms | None = None

@@ -194,7 +194,7 @@ function StartNegotiation({ s, onStarted }: { s: ContractState; onStarted: (n: C
           </>
         ) : (
           <Field label="Counterparty e-mail" htmlFor="cp-email" hint="Offers go out over SMTP when configured. Replies arrive through the webhook or the box that appears below.">
-            <Input id="cp-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="procurement@customer.com" />
+            <Input id="cp-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="procurement@customer.com" />
           </Field>
         )}
         <Row justify="end"><Button variant="primary" icon={<Play size={16} />} loading={busy} onClick={start}>Start negotiation</Button></Row>

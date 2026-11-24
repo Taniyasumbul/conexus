@@ -50,6 +50,8 @@ class EmailChannel(Channel):
         self.password = os.environ["SMTP_PASSWORD"]
 
     def send(self, to, subject, body):
+        if "@" not in (to or ""):
+            raise ValueError(f"not an e-mail address: {to!r}")
         msg = EmailMessage()
         msg["From"], msg["To"], msg["Subject"] = self.user, to, subject
         msg.set_content(body)

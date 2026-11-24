@@ -152,7 +152,7 @@ class Orchestrator:
 
         if st.their_last and not open_rl and self.pricing.acceptable(st.plan, st.their_last, ours):
             msg = self.comms.compose(st.their_last, rnd, accept=True, customer=ctx.customer)
-            self.outbound.send(ctx.customer, "Re: Subscription agreement", msg)
+            self.outbound.send(ctx.contact_email or ctx.customer, "Re: Subscription agreement", msg)
             st.history.append(Offer(round=rnd, sender="us", terms=st.their_last, message=msg, accept=True))
             st.round = rnd
             self._log(st, "sales_pricing", "ACCEPT_OFFER",
@@ -160,7 +160,7 @@ class Orchestrator:
             return self._agree(st, st.their_last)
 
         msg = self.comms.compose(ours, rnd, open_rl, customer=ctx.customer)
-        self.outbound.send(ctx.customer, "Re: Subscription agreement", msg)
+        self.outbound.send(ctx.contact_email or ctx.customer, "Re: Subscription agreement", msg)
         st.history.append(Offer(round=rnd, sender="us", terms=ours, message=msg))
         st.round, st.last_our_offer = rnd, ours
         st.last_sent_redlines = [r.clause_id for r in open_rl]

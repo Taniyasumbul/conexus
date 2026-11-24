@@ -99,8 +99,11 @@ def test_human_in_the_loop_reject_and_approve(client):
 def test_email_mode_with_reply_webhook(client):
     r = _sample(lambda r: not r["should_escalate"])
     cid = _create(client, r)["id"]
-    st = client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email"}).json()
+    st = client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email", "counterparty_email": " Buyer@Acme.io "}).json()
     assert st["status"] == "awaiting_reply" and st["round"] == 1
+    assert st["context"]["contact_email"] == "buyer@acme.io"
+    # the offer goes to the person, not to the company's display name
+    assert client.app.state.email_orch.outbound.sent[-1]["to"] == "buyer@acme.io"
     price = st["last_our_offer"]["price"]
     st = client.post(f"/api/contracts/{cid}/reply", json={"message": f"We accept your proposal of ${price:,.0f}. Deal."}).json()
     assert st["status"] in ("signed", "awaiting_human")
@@ -113,8 +116,16 @@ def test_email_mode_with_reply_webhook(client):
 def test_cannot_start_twice(client):
     r = _sample(lambda r: not r["should_escalate"])
     cid = _create(client, r)["id"]
-    client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email"})
-    assert client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email"}).status_code == 409
+    client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email", "counterparty_email": "a@b.io"})
+    assert client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email", "counterparty_email": "a@b.io"}).status_code == 409
+
+
+@pytest.mark.parametrize("email", [None, "", "Acme Corp", "a@b"])
+def test_email_mode_needs_a_real_address(client, email):
+    cid = _create(client, _sample(lambda r: not r["should_escalate"]))["id"]
+    r = client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email", "counterparty_email": email})
+    assert r.status_code == 422
+    assert client.get(f"/api/contracts/{cid}").json()["status"] == "analyzed"  # nothing was sent
 
 
 @pytest.mark.skipif(not (DATA / "cuad" / "clauses.jsonl").exists(), reason="CUAD not downloaded")
@@ -206,7 +217,7 @@ def test_reply_webhook_token(app, monkeypatch):
     monkeypatch.setenv("CONEXUS_WEBHOOK_TOKEN", "hook-secret")
     c = login(app, "sales@x.io")
     cid = _create(c, _sample(lambda r: not r["should_escalate"]))["id"]
-    c.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email"})
+    c.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email", "counterparty_email": "a@b.io"})
     anon = TestClient(app)
     assert anon.post(f"/api/contracts/{cid}/reply", json={"message": "hi"}).status_code == 401
     ok = anon.post(f"/api/contracts/{cid}/reply", json={"message": "Our counter-proposal is $1,000 per year, net 30."},
@@ -338,3 +349,24 @@ def test_crm_memory_and_envelopes_persist(tmp_path):
     crm = app2.state.crm
     assert len(crm.deals) == base + 1 and crm.deals[-1].deal_id == "cx-1"
     assert Store(db).envelopes("cx-1")[0]["customer"] == "Acme"
+
+
+def test_duplicate_webhook_reply_is_applied_once(client):
+    cid = _create(client, _sample(lambda r: not r["should_escalate"]))["id"]
+    client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email", "counterparty_email": "a@b.io"})
+    body = {"message": "Our counter-proposal is $1,000 per year, net 30.", "message_id": "<abc@mail>"}
+    first = client.post(f"/api/contracts/{cid}/reply", json=body).json()
+    again = client.post(f"/api/contracts/{cid}/reply", json=body).json()
+    assert again["round"] == first["round"] and len(again["history"]) == len(first["history"])
+
+
+def test_same_text_without_message_id_is_retry_only_within_window(client, monkeypatch):
+    import conexus.api.server as srv
+    cid = _create(client, _sample(lambda r: not r["should_escalate"]))["id"]
+    client.post(f"/api/contracts/{cid}/negotiate", json={"mode": "email", "counterparty_email": "a@b.io"})
+    body = {"message": "Our counter-proposal is $1,000 per year, net 30."}
+    r1 = client.post(f"/api/contracts/{cid}/reply", json=body).json()
+    assert client.post(f"/api/contracts/{cid}/reply", json=body).json()["round"] == r1["round"]  # retry ignored
+    monkeypatch.setattr(srv, "REPLY_RETRY_WINDOW_S", 0)
+    r3 = client.post(f"/api/contracts/{cid}/reply", json=body).json()
+    assert r3["status"] != "awaiting_reply" or r3["round"] > r1["round"]  # a later repeat is a real reply
