@@ -4,6 +4,7 @@ import {
   Alert, AuditTimeline, Avatar, Badge, Button, SaveBar, Switch, Card, ChoiceGroup, ClauseCard, DealStepper, Dialog, EmptyState, Field, Grid, HashChip,
   Input, KeyValue, NegotiationThread, PageHeader, PriceChart, Range, RedlineDiff, RiskBadge, Row, ScoreMeter, Segmented, Select,
   SignatureStamp, Skeleton, Spinner, Stack, Stat, StatusBadge, Table, Tabs, Textarea, useToast,
+  ActivityFeed, Breadcrumbs, FilterChip, NextAction, ResultCount, SortSelect, Steps, Toolbar,
 } from "@ui";
 import type { AuditEvent, Clause, ClauseRisk, Offer, PricingPlan } from "@lib/api";
 
@@ -156,9 +157,39 @@ export default function Gallery() {
         <Row><SignatureStamp envelope="env-d83ab4717c" terms={{ price: 15100, payment_days: 40, term_months: 12 }} /></Row>
       </Section>
 
+      <Section id="workspace" title="Breadcrumbs · NextAction · Steps" note="One next action per page, with its owner; quiet surfaces, no gradients">
+        <Stack gap={16}>
+          <Breadcrumbs items={[{ label: "Contracts", to: "/contracts" }, { label: "CNX-261111-B221D6" }]} />
+          <NextAction tone="critical" owner="Legal" title="Your decision: Risky Clause" actions={<Button size="sm" variant="success">Approve</Button>}>
+            Clause 6 caps liability at ten times the fees. Approving accepts it as drafted.
+          </NextAction>
+          <NextAction tone="info" owner="Customer" title="Waiting for the customer's reply">Offer for round 2 sent to buyer@acme.io.</NextAction>
+          <Steps steps={["Contract", "Business context", "Review & analyze"]} current={1} />
+        </Stack>
+      </Section>
+      <Section id="toolbar" title="Toolbar · FilterChip · SortSelect · ResultCount" note="The standard table toolbar; table rows become labelled cards below 640px">
+        <Card flush>
+          <GalleryToolbar />
+        </Card>
+      </Section>
+      <Section id="activity" title="ActivityFeed" note="Plain-language actors: CoNexus, a named person, Customer, System">
+        <ActivityFeed events={EX_EVENTS} />
+      </Section>
       <Section id="audit" title="AuditTimeline">
         <AuditTimeline events={EX_EVENTS} />
       </Section>
     </Stack>
+  );
+}
+
+function GalleryToolbar() {
+  const [chip, setChip] = useState(true);
+  const [sort, setSort] = useState<"updated" | "value">("updated");
+  return (
+    <Toolbar end={<><ResultCount shown={3} total={12} onClear={() => setChip(false)} /><SortSelect id="g-sort" value={sort} onChange={setSort}
+      options={[{ value: "updated", label: "Recently updated" }, { value: "value", label: "Highest value" }]} /></>}>
+      <FilterChip selected={chip} onToggle={() => setChip(!chip)}>Open risks</FilterChip>
+      <FilterChip selected={false} onToggle={() => undefined}>Enterprise</FilterChip>
+    </Toolbar>
   );
 }

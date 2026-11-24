@@ -7,18 +7,15 @@ import {
 import type { AuditEvent, Clause, ClauseRisk, Offer, RiskLevel, Status, Terms } from "@lib/api";
 import { money, titleCase } from "@lib/api";
 import { Badge, Tone } from "./primitives";
+import { STAGE } from "./workspace";
 
 /* ---------------------------------------------------------------- status */
-const STATUS: Record<Status, { tone: Tone; label: string; icon: ReactNode }> = {
-  analyzed: { tone: "neutral", label: "Analyzed", icon: <FileSearch /> },
-  awaiting_reply: { tone: "info", label: "Negotiating", icon: <MessageSquareReply /> },
-  awaiting_human: { tone: "critical", label: "Needs human", icon: <Hand /> },
-  signed: { tone: "good", label: "Sent to sign", icon: <FileSignature /> },
-  closed: { tone: "neutral", label: "Closed", icon: <XCircle /> },
+const STATUS_ICON: Record<Status, ReactNode> = {
+  analyzed: <FileSearch />, awaiting_reply: <MessageSquareReply />, awaiting_human: <Hand />,
+  signed: <FileSignature />, closed: <XCircle />,
 };
 export function StatusBadge({ status }: { status: Status }) {
-  const s = STATUS[status];
-  return <Badge tone={s.tone} icon={s.icon}>{s.label}</Badge>;
+  return <Badge tone={STAGE[status].tone} icon={STATUS_ICON[status]}>{STAGE[status].label}</Badge>;
 }
 
 const RISK: Record<RiskLevel, Tone> = { low: "good", medium: "warning", high: "critical" };
@@ -207,15 +204,15 @@ export function HashChip({ hash, chars = 10 }: { hash: string; chars?: number })
 }
 
 /* ---------------------------------------------------------------- lifecycle stepper */
-const STEPS = ["Ingest", "Risk review", "Negotiate", "Human gate", "E-signature"] as const;
+const STEPS = ["Analyze", "Risk review", "Negotiate", "Legal review", "E-signature"] as const;
 export function DealStepper({ status, everEscalated }: { status: Status; everEscalated: boolean }) {
   const idx = { analyzed: 1, awaiting_reply: 2, awaiting_human: 3, signed: 4, closed: 4 }[status];
   return (
     <div className="nx-steps" aria-label="Deal lifecycle">
       {STEPS.map((s, i) => {
         let state = i < idx ? "done" : i === idx ? "current" : "todo";
-        if (s === "Human gate" && !everEscalated && i < idx) state = "done";
-        if (s === "Human gate" && status === "awaiting_human") state = "blocked";
+        if (s === "Legal review" && !everEscalated && i < idx) state = "done";
+        if (s === "Legal review" && status === "awaiting_human") state = "blocked";
         if (status === "signed" && i === 4) state = "done";
         if (status === "closed" && i === 4) state = "current";
         return (

@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell, NotificationBell, Skeleton, ToastProvider, useToast } from "@ui";
@@ -55,7 +55,8 @@ function App() {
         <Route path="/contracts" element={<Contracts />} />
         <Route path="/contracts/:id" element={<ContractDetail onChange={inbox.reload} />} />
         <Route path="/new" element={<NewContract />} />
-        <Route path="/inbox" element={<Inbox onChange={inbox.reload} />} />
+        <Route path="/review" element={<Inbox onChange={inbox.reload} />} />
+        <Route path="/inbox" element={<Navigate to="/review" replace />} />
         <Route path="/ledger" element={<Ledger />} />
         <Route path="/annotate" element={<Annotate />} />
         <Route path="/settings" element={<Settings />} />
