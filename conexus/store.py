@@ -95,6 +95,17 @@ CREATE TABLE IF NOT EXISTS notification_reads (
     user_id         INTEGER NOT NULL,
     PRIMARY KEY (notification_id, user_id)
 );
+CREATE TABLE IF NOT EXISTS crm_deals (
+    deal_id    TEXT PRIMARY KEY,
+    deal       TEXT NOT NULL,
+    created_at {TS} NOT NULL
+);
+CREATE TABLE IF NOT EXISTS envelopes (
+    envelope_id TEXT PRIMARY KEY,
+    contract_id TEXT NOT NULL,
+    payload     TEXT NOT NULL,
+    created_at  {TS} NOT NULL
+);
 """
 DIALECT = {
     "sqlite": {"ID": "INTEGER PRIMARY KEY AUTOINCREMENT", "BLOB": "BLOB", "TS": "REAL"},
@@ -310,6 +321,24 @@ class Store:
 
     def audit_append(self, event: dict) -> None:
         self._q("INSERT INTO audit_events (seq, event) VALUES (?,?)", (event["seq"], json.dumps(event, default=str)), commit=True)
+
+    # ------------------------------------------------------------ CRM memory write-back and e-sign envelopes
+    def crm_load(self) -> list[dict]:
+        return [json.loads(r["deal"]) for r in self._q("SELECT deal FROM crm_deals ORDER BY created_at")]
+
+    def crm_append(self, deal: dict) -> None:
+        self._q("INSERT INTO crm_deals (deal_id, deal, created_at) VALUES (?,?,?) "
+                "ON CONFLICT(deal_id) DO UPDATE SET deal=excluded.deal",
+                (deal["deal_id"], json.dumps(deal, default=str), time.time()), commit=True)
+
+    def envelope_save(self, envelope_id: str, contract_id: str, payload: dict) -> None:
+        self._q("INSERT INTO envelopes (envelope_id, contract_id, payload, created_at) VALUES (?,?,?,?)",
+                (envelope_id, contract_id, json.dumps(payload, default=str), time.time()), commit=True)
+
+    def envelopes(self, contract_id: str) -> list[dict]:
+        rows = self._q("SELECT envelope_id, payload, created_at FROM envelopes WHERE contract_id=? ORDER BY created_at",
+                       (contract_id,))
+        return [{"envelope_id": r["envelope_id"], "created_at": r["created_at"], **json.loads(r["payload"])} for r in rows]
 
     # ------------------------------------------------------------ notifications
     def notify(self, kind: str, title: str, body: str, link: str | None = None,

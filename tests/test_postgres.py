@@ -38,6 +38,9 @@ def test_postgres_end_to_end_and_survives_restart(pg_url, tmp_path, monkeypatch)
                                          "sample_id": r["contract_id"]}).json()["id"]
     c.post(f"/api/contracts/{cid}/negotiate", json={"mode": "simulated", "wtp": r["hidden"]["wtp"], "delay_s": 0})
     status = c.get(f"/api/contracts/{cid}").json()["status"]
+    envs = c.get(f"/api/contracts/{cid}/envelopes").json()
+    assert (len(envs) == 1) == (status == "signed")
+    crm_size = len(app.state.crm.deals)
     assert status in ("signed", "closed", "awaiting_human")
     c.put("/api/policy", json={"escalation": {"max_rounds": 6}})
     events_before = c.get("/api/audit/verify").json()
@@ -49,6 +52,8 @@ def test_postgres_end_to_end_and_survives_restart(pg_url, tmp_path, monkeypatch)
     assert c2.get("/api/auth/status").json()["setup_required"] is False
     assert c2.post("/api/auth/login", json={"email": "boss@x.io", "password": PW}).status_code == 200
     assert c2.get(f"/api/contracts/{cid}").json()["status"] == status
+    assert c2.get(f"/api/contracts/{cid}/envelopes").json() == envs  # e-sign envelope kept
+    assert len(app2.state.crm.deals) == crm_size  # learned CRM memory kept
     assert c2.get("/api/policy").json()["escalation"]["max_rounds"] == 6
     v = c2.get("/api/audit/verify").json()
     assert v["ok"] and v["events"] == events_before["events"]  # same chain, nothing lost

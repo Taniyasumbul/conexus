@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from conexus.api.auth import hash_password
 from conexus.api.server import create_app
 from conexus.config import DATA, get_settings
+from conexus.integrations.crm import CRMStore
 
 PW = "correct-horse-battery"
 
@@ -318,3 +319,22 @@ def test_analytics_shape(client):
     assert len(a["days"]) == 14 and a["totals"]["contracts"] == 1
     assert sum(d["analyzed"] for d in a["days"]) == 1
     assert len(a["rounds"]) == 8
+
+
+def test_crm_memory_and_envelopes_persist(tmp_path):
+    """A signed deal's CRM write-back and its e-sign envelope live in the database and survive a restart."""
+    from conexus.store import Store
+
+    db = tmp_path / "mem.db"
+    s = get_settings(llm_provider="offline")
+    app = create_app(s, db, tmp_path / "a.jsonl", labels_export=tmp_path / "e.jsonl")
+    store = app.state.store
+    base = len(CRMStore.from_csv(s.crm_path).deals)
+    store.crm_append({"deal_id": "cx-1", "segment": "smb", "region": "india", "product": "pro", "seats": 10,
+                      "list_price": 1000.0, "final_price": 900.0, "payment_days": 30, "term_months": 12,
+                      "won": True, "rounds": 3})
+    store.envelope_save("env-abc", "cx-1", {"customer": "Acme"})
+    app2 = create_app(s, db, tmp_path / "a.jsonl", labels_export=tmp_path / "e.jsonl")
+    crm = app2.state.crm
+    assert len(crm.deals) == base + 1 and crm.deals[-1].deal_id == "cx-1"
+    assert Store(db).envelopes("cx-1")[0]["customer"] == "Acme"

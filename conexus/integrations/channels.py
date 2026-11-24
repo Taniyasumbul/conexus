@@ -60,11 +60,18 @@ class EmailChannel(Channel):
 
 
 class ESignStub:
-    def __init__(self, out_dir: Path):
+    """sink: optional object with envelope_save(envelope_id, contract_id, payload) (the Store), used
+    instead of files so envelopes survive redeploys."""
+
+    def __init__(self, out_dir: Path, sink=None):
         self.out_dir = Path(out_dir)
+        self.sink = sink
 
     def send_for_signature(self, contract_id: str, payload: dict) -> str:
         envelope_id = f"env-{uuid.uuid4().hex[:10]}"
+        if self.sink is not None:
+            self.sink.envelope_save(envelope_id, contract_id, payload)
+            return envelope_id
         self.out_dir.mkdir(parents=True, exist_ok=True)
         (self.out_dir / f"{contract_id}_{envelope_id}.json").write_text(json.dumps(payload, indent=2, default=str))
         return envelope_id

@@ -34,7 +34,8 @@ from pydantic import BaseModel, Field
 from ..agents.audit import AuditAgent
 from ..agents.risk import RiskClassifier
 from ..config import DATA, RUNS, EscalationPolicyConfig, PricingPolicyConfig, Settings, get_settings
-from ..integrations.channels import Channel, ConsoleChannel, EmailChannel, SlackChannel
+from ..integrations.channels import Channel, ConsoleChannel, EmailChannel, ESignStub, SlackChannel
+from ..integrations.crm import CRMStore
 from ..integrations import mailer
 from ..integrations.redline_docx import build_redline_docx
 from ..llm import build_llm
@@ -185,17 +186,21 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
     llm = build_llm(s)
     escalations = _escalation_channel()
     clf = RiskClassifier.default(s)
-    common = dict(audit=audit, escalations=escalations, out_dir=RUNS, learn=True, classifier=clf)
+    # CRM memory = historical CSV + every deal CoNexus closed, persisted in the database
+    crm = CRMStore.from_csv(s.crm_path).attach(store)
+    common = dict(audit=audit, escalations=escalations, out_dir=RUNS, learn=True, classifier=clf, crm=crm)
     # one orchestrator per outbound channel; they share audit log and CRM memory
     sim_orch = Orchestrator(s, llm, outbound=RecordingChannel(ConsoleChannel(quiet=True)), **common)
-    email_orch = Orchestrator(s, llm, outbound=_email_channel(), crm=sim_orch.crm, **common)
+    email_orch = Orchestrator(s, llm, outbound=_email_channel(), **common)
+    esign = ESignStub(RUNS / "envelopes", sink=store)
+    sim_orch.esign = email_orch.esign = esign
     locks: dict[str, threading.Lock] = defaultdict(threading.Lock)
     annotations = AnnotationService(s, store, sim_orch.risk, **({"export_path": labels_export} if labels_export else {}))
 
     app = FastAPI(title="CoNexus API", version="0.2.0",
                   description="Risk-aware, memory-augmented multi-agent B2B contract negotiation")
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-    app.state.store, app.state.audit = store, audit
+    app.state.store, app.state.audit, app.state.crm = store, audit, crm
 
     def orch_for(cid: str) -> Orchestrator:
         row = store.row(cid)
@@ -582,6 +587,12 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
         if st.status == "awaiting_reply" and store.row(cid)["mode"] == "simulated":
             bg.add_task(drive, cid)
         return view(st)
+
+    @app.get("/api/contracts/{cid}/envelopes")
+    def contract_envelopes(cid: str, user=Depends(sales)):
+        """E-signature envelopes sent for this contract (stored in the database)."""
+        load(cid)
+        return store.envelopes(cid)
 
     @app.get("/api/contracts/{cid}/document")
     def contract_document(cid: str, user=Depends(sales)):
