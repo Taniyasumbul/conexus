@@ -227,7 +227,7 @@ export default function Landing({ status, onSignedIn }: { status?: AuthStatus | 
           <div className="lp-stats">
             <div><b>86%</b><span>of deal-breaker clauses caught in contracts the model never saw</span></div>
             <div><b>0</b><span>risky clauses signed without review in 200 simulated deals</span></div>
-            <div><b>5.7×</b><span>better at spotting risky clauses than hand-written rules (F1 0.74 vs 0.13)</span></div>
+            <div><b>5.5×</b><span>better at spotting risky clauses than hand-written rules (F1 0.74 vs 0.13)</span></div>
             <div><b>+8 pts</b><span>more of the deal value captured when pricing uses past deals</span></div>
           </div>
           <p className="lp-proof__note">Measured on the public CUAD v1 dataset with a locked test set of 99 unseen contracts.</p>

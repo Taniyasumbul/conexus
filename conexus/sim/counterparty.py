@@ -39,6 +39,28 @@ class RuleCounterparty:
         self.injected = False
         self.last_offer: Terms = self.opening
 
+    # ---- persistence: a versioned JSON snapshot (no pickle), enough to continue exactly where it stopped
+    STATE_VERSION = 1
+
+    def to_state(self) -> dict:
+        v, internal, gauss = self.rng.getstate()
+        return {"v": self.STATE_VERSION, "kind": "rule", "wtp": self.wtp, "opening": self.opening.model_dump(),
+                "persona": self.persona, "seed": self.seed, "rng": [v, list(internal), gauss],
+                "redline_decisions": self.redline_decisions, "injected": self.injected,
+                "last_offer": self.last_offer.model_dump()}
+
+    @classmethod
+    def from_state(cls, d: dict) -> "RuleCounterparty":
+        if d.get("v") != cls.STATE_VERSION or d.get("kind") != "rule":
+            raise ValueError(f"unsupported simulation snapshot {d.get('kind')} v{d.get('v')}")
+        cp = cls(float(d["wtp"]), Terms(**d["opening"]), d["persona"], int(d["seed"]))
+        v, internal, gauss = d["rng"]
+        cp.rng.setstate((v, tuple(internal), gauss))
+        cp.redline_decisions = {str(k): bool(x) for k, x in d["redline_decisions"].items()}
+        cp.injected = bool(d["injected"])
+        cp.last_offer = Terms(**d["last_offer"])
+        return cp
+
     def utility(self, t: Terms) -> float:
         return self.wtp - t.price + t.price * COC * t.payment_days / 365
 

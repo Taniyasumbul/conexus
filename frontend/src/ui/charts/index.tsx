@@ -136,7 +136,7 @@ export function ActivityChart({ data, height = 240 }: { data: { day: string; ana
   const axis = { stroke: t["border-strong"], tick: { fill: t["fg-3"], fontSize: 11 }, tickLine: false };
   return (
     <div className="nx-stack" style={{ ["--gap" as string]: "8px" }}>
-      <Legend items={[{ label: "Contracts analysed", color: t["series-1"] }, { label: "Deals signed", color: t["series-2"] }]} />
+      <Legend items={[{ label: "Contracts analysed", color: t["series-1"] }, { label: "Deals agreed", color: t["series-2"] }]} />
       <div style={{ width: "100%", height }}>
         <ResponsiveContainer>
           <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -12 }} barGap={2} barCategoryGap="28%">
@@ -145,7 +145,7 @@ export function ActivityChart({ data, height = 240 }: { data: { day: string; ana
             <YAxis {...axis} allowDecimals={false} width={36} />
             <Tooltip content={<ChartTooltip />} cursor={{ fill: t["chart-grid"] }} />
             <Bar name="Contracts analysed" dataKey="analyzed" fill={t["series-1"]} radius={[4, 4, 0, 0]} isAnimationActive={false} />
-            <Bar name="Deals signed" dataKey="signed" fill={t["series-2"]} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+            <Bar name="Deals agreed" dataKey="signed" fill={t["series-2"]} radius={[4, 4, 0, 0]} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
       </div>

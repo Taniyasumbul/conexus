@@ -11,6 +11,7 @@ const APPROVE_MEANS: Record<string, string> = {
   new_legal_terms: "Approving accepts the new terms the customer added. Negotiation continues.",
   no_deal_high_value: "Approving hands this deal to a human negotiator. The agents stop.",
   value_limit: "Approving sends the agreed deal for e-signature.",
+  unclear_reply: "The customer's reply was unclear. Approving means it was not an exit: the agents send the next offer. Rejecting closes the deal.",
 };
 
 export function EscalationSummary({ escalation }: { escalation: Escalation }) {

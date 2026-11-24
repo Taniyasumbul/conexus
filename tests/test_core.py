@@ -79,3 +79,31 @@ def test_end_to_end_offline(tmp_path):
     if st.outcome.status == "agreed":
         assert st.outcome.final_terms.price >= st.plan.floor_price
     assert AuditAgent.verify(tmp_path / "audit.jsonl")[0]
+
+
+def test_simulated_buyer_snapshot_continues_exactly():
+    """The JSON snapshot (which replaced pickle) resumes the buyer with identical future replies."""
+    a = RuleCounterparty(20_000, Terms(price=9_000, payment_days=60), "hardball", seed=7)
+    ours = Terms(price=26_000, payment_days=30)
+    for rnd in range(1, 3):
+        a.respond(rnd, ours, ["c4", "c9"])
+    b = RuleCounterparty.from_state(json.loads(json.dumps(a.to_state())))
+    for rnd in range(3, 9):
+        assert a.respond(rnd, ours, ["c4", "c9", "c11"]) == b.respond(rnd, ours, ["c4", "c9", "c11"])
+
+
+def test_store_never_unpickles(tmp_path):
+    import pickle
+
+    from conexus.store import Store
+
+    store = Store(tmp_path / "s.db")
+    row = json.loads((DATA / "labels" / "contracts.jsonl").read_text().splitlines()[0])
+    st = Orchestrator(S, out_dir=tmp_path).analyze("k1", (DATA / "contracts" / f"{row['contract_id']}.txt").read_text(),
+                                                   DealContext(**row["context"]))
+    store.create(st, "text", None)
+    store.db.run("UPDATE contracts SET sim_blob=? WHERE id=?", (pickle.dumps(object()), "k1"))
+    assert store.sim("k1") is None
+    cp = RuleCounterparty(20_000, Terms(price=9_000), "cooperative", seed=1)
+    store.save(st, sim=cp)
+    assert store.sim("k1").to_state() == cp.to_state()

@@ -32,7 +32,7 @@ Full diagrams (system, deployment, request flow, state machine) and the API refe
 | Research objective | Component | Code |
 |---|---|---|
 | RO1 multi-agent coordination over shared state | 6 agents + Orchestrator over `NegotiationState` | [conexus/agents/](conexus/agents/), [orchestrator.py](conexus/orchestrator.py) |
-| RO2 risk-gated escalation policy | Hybrid rules + ML + LLM risk scoring; 5 escalation kinds | [risk.py](conexus/agents/risk.py), [orchestrator.py](conexus/orchestrator.py) |
+| RO2 risk-gated escalation policy | Hybrid rules + ML + LLM risk scoring; 6 escalation kinds | [risk.py](conexus/agents/risk.py), [orchestrator.py](conexus/orchestrator.py) |
 | RO3 memory-augmented negotiation | WTP estimate from similar CRM deals bounds anchor and concessions | [memory.py](conexus/agents/memory.py), [pricing.py](conexus/agents/pricing.py) |
 | RO4 audit & explainability | SHA-256 hash-chained append-only log with rationale per decision | [audit.py](conexus/agents/audit.py) |
 | RO5 empirical evaluation | Baselines, ablations, precision/recall, simulated counterparties | [conexus/evaluation/](conexus/evaluation/) |
@@ -77,7 +77,8 @@ decide in the **Escalation inbox** -> verify the **Audit ledger**.
 - Inbound e-mail webhook: `POST /api/contracts/{id}/reply` with header `X-Conexus-Webhook-Token`
   equal to `CONEXUS_WEBHOOK_TOKEN`.
 - **Database**: SQLite by default. Set `DATABASE_URL` to a PostgreSQL URL (Neon / Supabase free tier
-  work) and contracts, users, sessions, policy, notifications and the audit chain are all stored there,
+  work) and contracts, users, sessions, policy, notifications, the audit chain, learned CRM memory and
+  e-sign envelopes are all stored there,
   so nothing is lost on redeploys. Tested against a real Postgres in `tests/test_postgres.py`.
 - **Notifications**: the bell in the top bar shows escalations (to Legal), signed deals, approvals and
   closures; a toast pops up when something new arrives.
@@ -142,20 +143,20 @@ IP Ownership Assignment, Non-Compete, Exclusivity). 5-fold cross-validation grou
 
 | Approach | Precision | Recall | F1 |
 |---|---|---|---|
-| Rules only | 0.48 | 0.08 | 0.13 |
-| ML trained on synthetic clauses | 0.40 | 0.24 | 0.30 |
-| ML trained on CUAD | 0.69 | 0.80 | 0.74 |
-| **Hybrid: hard rules + safe harbours + CUAD ML (deployed)** | **0.66** | **0.81** | **0.73** |
-| Ablation: hybrid with weighted average instead of max | 0.64 | 0.15 | 0.24 |
+| Rules only | 0.48 | 0.07 | 0.13 |
+| ML trained on synthetic clauses | 0.41 | 0.24 | 0.30 |
+| ML trained on CUAD | 0.69 | 0.79 | 0.74 |
+| **Hybrid: hard rules + safe harbours + CUAD ML (deployed)** | **0.67** | **0.80** | **0.73** |
+| Ablation: hybrid with weighted average instead of max | 0.61 | 0.13 | 0.21 |
 
 **Held-out test** (locked 20% of contracts by hash, never used for training or tuning; 1,518 clauses
 from 99 contracts): rules F1 0.13, CUAD-trained ML 0.75, **hybrid 0.74 (precision 0.65, recall 0.86)**.
 The numbers above are 5-fold CV on the 80% dev split.
 
 Findings for the paper:
-1. Rules written from a guideline catch only 8% of real deal-breakers. Real training data is what works.
+1. Rules written from a guideline catch only 7% of real deal-breakers. Real training data is what works.
 2. How rules and ML are combined decides the result: averaging lets a quiet rule veto a confident
-   model (F1 0.24); `max` lets either signal escalate (F1 0.73).
+   model (F1 0.21); `max` lets either signal escalate (F1 0.73).
 3. Rules still add something the ML cannot learn from CUAD: **direction**. CUAD does not record which
    party a clause binds, so the model flags "Vendor retains all rights" like an IP transfer.
    Safe-harbour rules cap those cases and removed every false escalation on the synthetic contracts
@@ -225,10 +226,9 @@ tests/              unit + API tests
   qualitative runs and, if possible, a small human study.
 - **Time-to-close** comes from a parametric model (`TIME_MODEL` in `negotiation_eval.py`), not
   measurements.
-- **DocuSign is a stub** (writes the envelope JSON to `runs/envelopes/`). Slack and SMTP work once
+- **DocuSign is a stub**: the app shows agreed deals as "Sent to sign"; the envelope is stored in the database (`GET /api/contracts/{id}/envelopes`)
+  but not sent to DocuSign. Slack and SMTP work once
   credentials are set.
-- **CRM memory write-back** still goes to CSV / memory, and DocuSign envelopes are files, so on a host
-  with an ephemeral disk those two reset on redeploy even with `DATABASE_URL` set.
 - **Claude/Ollama paths** are implemented but have not yet been run against live models.
 
 ## Roadmap

@@ -12,7 +12,7 @@ const FLOW: { status: Status; label: string; color: string }[] = [
   { status: "analyzed", label: "Analyzed", color: "var(--fg-3)" },
   { status: "awaiting_reply", label: "Negotiating", color: "var(--accent)" },
   { status: "awaiting_human", label: "Needs a human", color: "var(--critical)" },
-  { status: "signed", label: "Signed", color: "var(--good)" },
+  { status: "signed", label: "Sent to sign", color: "var(--good)" },
   { status: "closed", label: "Closed", color: "var(--border-strong)" },
 ];
 

@@ -17,8 +17,10 @@ Interactive docs: http://localhost:8000/docs
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import re
 import secrets
 import tempfile
 import threading
@@ -32,9 +34,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from ..agents.audit import AuditAgent
+from .limits import RateLimiter, read_upload
 from ..agents.risk import RiskClassifier
 from ..config import DATA, RUNS, EscalationPolicyConfig, PricingPolicyConfig, Settings, get_settings
-from ..integrations.channels import Channel, ConsoleChannel, EmailChannel, SlackChannel
+from ..integrations.channels import Channel, ConsoleChannel, EmailChannel, ESignStub, SlackChannel
+from ..integrations.crm import CRMStore
 from ..integrations import mailer
 from ..integrations.redline_docx import build_redline_docx
 from ..llm import build_llm
@@ -49,16 +53,21 @@ from .auth import (COOKIE, ROLES, SESSION_TTL, check_password_strength, current_
                    public_user, require, seed_admin_from_env, token_hash, verify_password)
 
 
+REPLY_RETRY_WINDOW_S = 600
+EMAIL_RE = re.compile(r"[^@\s]+@[^@\s]+\.[a-z]{2,}", re.I)
+
+
 class NegotiateRequest(BaseModel):
     mode: Literal["simulated", "email"] = "simulated"
     persona: Literal["cooperative", "hardball", "deadline"] = "cooperative"
     wtp: float | None = Field(None, description="Simulated buyer's private max annual price (simulated mode)")
     delay_s: float = Field(1.0, ge=0, le=30, description="Pause between simulated rounds, for live demos")
-    counterparty_email: str | None = None
+    counterparty_email: str | None = Field(None, max_length=254, description="Customer contact for e-mail mode")
 
 
 class ReplyRequest(BaseModel):
-    message: str
+    message: str = Field(..., min_length=1, max_length=20_000)
+    message_id: str | None = Field(None, max_length=300, description="Mail provider's Message-ID; makes retries safe")
 
 
 class AnnotationRequest(BaseModel):
@@ -185,17 +194,29 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
     llm = build_llm(s)
     escalations = _escalation_channel()
     clf = RiskClassifier.default(s)
-    common = dict(audit=audit, escalations=escalations, out_dir=RUNS, learn=True, classifier=clf)
+    # CRM memory = historical CSV + every deal CoNexus closed, persisted in the database
+    crm = CRMStore.from_csv(s.crm_path).attach(store)
+    common = dict(audit=audit, escalations=escalations, out_dir=RUNS, learn=True, classifier=clf, crm=crm)
     # one orchestrator per outbound channel; they share audit log and CRM memory
     sim_orch = Orchestrator(s, llm, outbound=RecordingChannel(ConsoleChannel(quiet=True)), **common)
-    email_orch = Orchestrator(s, llm, outbound=_email_channel(), crm=sim_orch.crm, **common)
+    email_orch = Orchestrator(s, llm, outbound=_email_channel(), **common)
+    esign = ESignStub(RUNS / "envelopes", sink=store)
+    sim_orch.esign = email_orch.esign = esign
     locks: dict[str, threading.Lock] = defaultdict(threading.Lock)
     annotations = AnnotationService(s, store, sim_orch.risk, **({"export_path": labels_export} if labels_export else {}))
 
     app = FastAPI(title="CoNexus API", version="0.2.0",
                   description="Risk-aware, memory-augmented multi-agent B2B contract negotiation")
-    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-    app.state.store, app.state.audit = store, audit
+    # The web app is served from this same origin (and Vite proxies /api in development), so no
+    # cross-origin access is needed. Allow extra origins only explicitly, e.g. a separate front end.
+    cors = [o.strip() for o in os.getenv("CONEXUS_CORS_ORIGINS", "").split(",") if o.strip()]
+    if cors:
+        app.add_middleware(CORSMiddleware, allow_origins=cors, allow_credentials=True,
+                           allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"], allow_headers=["content-type", "authorization"])
+    limiter = RateLimiter()
+    app.state.limiter = limiter
+    app.state.store, app.state.audit, app.state.crm = store, audit, crm
+    app.state.email_orch = email_orch
 
     def orch_for(cid: str) -> Orchestrator:
         row = store.row(cid)
@@ -246,7 +267,7 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
                          link, role="legal")
         elif st.status == "signed" and st.outcome and st.outcome.final_terms:
             t = st.outcome.final_terms
-            store.notify("signed", f"Deal signed with {who}", f"{_money(t.price)}/yr · net {t.payment_days} · {st.outcome.rounds} rounds", link)
+            store.notify("signed", f"Deal agreed with {who}, sent for signature", f"{_money(t.price)}/yr · net {t.payment_days} · {st.outcome.rounds} rounds", link)
         elif st.status == "closed" and st.outcome:
             label = {"rejected_by_human": "rejected by Legal", "walked_away": "customer walked away",
                      "no_agreement": "no agreement", "handed_off": "handed to a person"}.get(st.outcome.status, st.outcome.status)
@@ -302,7 +323,7 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
         return {"setup_required": real_users() == 0, "user": user, "demo_enabled": demo_enabled,
                 "signup_enabled": signup_enabled and real_users() > 0}
 
-    @app.post("/api/auth/setup")
+    @app.post("/api/auth/setup", dependencies=[Depends(limiter.guard("setup", 10, 600))])
     def auth_setup(req: SetupRequest, request: Request, response: Response):
         """One-time: create the first admin. Disabled as soon as any user exists."""
         if real_users() > 0:
@@ -338,7 +359,7 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
             out["dev_link"] = link  # local development only: no SMTP configured
         return out
 
-    @app.post("/api/auth/signup", status_code=201)
+    @app.post("/api/auth/signup", status_code=201, dependencies=[Depends(limiter.guard("signup", 5, 600))])
     def auth_signup(req: SetupRequest, request: Request):
         if not signup_enabled:
             raise HTTPException(404, "Sign-up is turned off on this server. Ask an admin for an account.")
@@ -358,7 +379,7 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
             audit.log("auth", "USER_SIGNUP", f"{req.email} signed up (sales, unverified)", {"role": "sales"})
         return _send_link(request, uid, req.email.strip().lower(), req.name, "verify")
 
-    @app.post("/api/auth/verify")
+    @app.post("/api/auth/verify", dependencies=[Depends(limiter.guard("verify", 20, 600))])
     def auth_verify(req: TokenRequest, request: Request, response: Response):
         u = store.consume_email_token(token_hash(req.token), "verify")
         if not u:
@@ -368,21 +389,21 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
         _login(response, request, u["id"])
         return public_user(store.user_by_id(u["id"]))
 
-    @app.post("/api/auth/resend-verification")
+    @app.post("/api/auth/resend-verification", dependencies=[Depends(limiter.guard("mail", 5, 600))])
     def auth_resend(req: EmailRequest, request: Request):
         u = store.user_by_email(req.email)
         if u and u["active"] and not u["email_verified"]:
             return _send_link(request, u["id"], u["email"], u["name"], "verify")
         return {"ok": True, "email_sent": False}  # same answer either way: no account enumeration
 
-    @app.post("/api/auth/forgot")
+    @app.post("/api/auth/forgot", dependencies=[Depends(limiter.guard("mail", 5, 600))])
     def auth_forgot(req: EmailRequest, request: Request):
         u = store.user_by_email(req.email)
         if u and u["active"] and u["email"] != DEMO_EMAIL:
             return _send_link(request, u["id"], u["email"], u["name"], "reset")
         return {"ok": True, "email_sent": False}
 
-    @app.post("/api/auth/reset")
+    @app.post("/api/auth/reset", dependencies=[Depends(limiter.guard("reset", 10, 600))])
     def auth_reset(req: ResetRequest, request: Request, response: Response):
         check_password_strength(req.password)
         u = store.consume_email_token(token_hash(req.token), "reset")
@@ -394,7 +415,7 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
         _login(response, request, u["id"])
         return public_user(store.user_by_id(u["id"]))
 
-    @app.post("/api/auth/demo")
+    @app.post("/api/auth/demo", dependencies=[Depends(limiter.guard("demo", 20, 60))])
     def auth_demo(request: Request, response: Response):
         """One-click demo: signs in as a Legal-level demo user (no Settings or user admin)."""
         if not demo_enabled:
@@ -408,7 +429,7 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
         _login(response, request, u["id"])
         return public_user(u)
 
-    @app.post("/api/auth/login")
+    @app.post("/api/auth/login", dependencies=[Depends(limiter.guard("login", 10, 60))])
     def auth_login(req: LoginRequest, request: Request, response: Response):
         u = store.user_by_email(req.email)
         if not u or not u["active"] or not verify_password(req.password, u["password_hash"]):
@@ -477,7 +498,7 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
     def policy_history(user=Depends(sales)):
         return [e for e in reversed(audit.events) if e["action"] == "POLICY_CHANGE"][:50]
 
-    @app.post("/api/contracts", status_code=201)
+    @app.post("/api/contracts", status_code=201, dependencies=[Depends(limiter.guard("upload", 30, 60))])
     def create_contract(user=Depends(sales), customer: str = Form(...), segment: str = Form("smb"), region: str = Form("india"),
                         product: str = Form("pro"), seats: int = Form(50), list_price: float | None = Form(None),
                         sample_id: str | None = Form(None), file: UploadFile | None = File(None)):
@@ -493,7 +514,7 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
             if suffix not in (".pdf", ".docx", ".txt", ".md"):
                 raise HTTPException(415, "supported: .pdf .docx .txt .md")
             with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-                tmp.write(file.file.read())
+                tmp.write(read_upload(file, suffix))
             try:
                 text = read_document(tmp.name)
             finally:
@@ -546,12 +567,16 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
                 store.save(st, sim=cp)
                 bg.add_task(drive, cid)
             else:
+                to = (req.counterparty_email or st.context.contact_email or "").strip().lower()
+                if not EMAIL_RE.fullmatch(to):
+                    raise HTTPException(422, "E-mail mode needs the customer's e-mail address")
+                st.context.contact_email = to
                 store.save(st, mode="email")
                 st = email_orch.start(st)
                 store.save(st)
         return view(st)
 
-    @app.post("/api/contracts/{cid}/reply")
+    @app.post("/api/contracts/{cid}/reply", dependencies=[Depends(limiter.guard("reply", 60, 60))])
     def reply(cid: str, req: ReplyRequest, request: Request, x_conexus_webhook_token: str | None = Header(None)):
         """Inbound e-mail webhook (e.g. SendGrid / Mailgun inbound parse, authenticated with the
         X-Conexus-Webhook-Token header = CONEXUS_WEBHOOK_TOKEN) or manual paste from the UI (session)."""
@@ -562,10 +587,22 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
             st = load(cid)
             if store.row(cid)["mode"] != "email":
                 raise HTTPException(409, "replies are only accepted for e-mail mode negotiations")
+            # providers retry webhooks: the same reply must not move the negotiation twice. A provider
+            # Message-ID is exact; without one, identical text within 10 minutes counts as a retry
+            # (a customer may legitimately repeat the same counter-offer later).
+            now = time.time()
+            if req.message_id:
+                reply_id, seen = "id:" + req.message_id, st.processed_replies.get("id:" + req.message_id) is not None
+            else:
+                reply_id = "text:" + hashlib.sha256(" ".join(req.message.split()).encode()).hexdigest()
+                seen = now - st.processed_replies.get(reply_id, 0) < REPLY_RETRY_WINDOW_S
+            if seen:
+                return view(st)
             try:
                 st = email_orch.on_reply(st, req.message)
             except ValueError as e:
                 raise HTTPException(409, str(e))
+            st.processed_replies[reply_id] = now
             store.save(st)
         return view(st)
 
@@ -582,6 +619,12 @@ def create_app(settings: Settings | None = None, db_path: Path | None = None, au
         if st.status == "awaiting_reply" and store.row(cid)["mode"] == "simulated":
             bg.add_task(drive, cid)
         return view(st)
+
+    @app.get("/api/contracts/{cid}/envelopes")
+    def contract_envelopes(cid: str, user=Depends(sales)):
+        """E-signature envelopes sent for this contract (stored in the database)."""
+        load(cid)
+        return store.envelopes(cid)
 
     @app.get("/api/contracts/{cid}/document")
     def contract_document(cid: str, user=Depends(sales)):

@@ -202,7 +202,7 @@ export function SignedCelebration({ children, onDone }: { children: ReactNode; o
   if (!show) return null;
   // portal to <body>: page transitions leave transforms on ancestors, which would trap position:fixed
   return createPortal(
-    <div className="nx-celebrate" role="status" aria-label="Deal signed">
+    <div className="nx-celebrate" role="status" aria-label="Deal agreed">
       <Confetti onDone={() => { setShow(false); onDone(); }} />
       <div className="nx-celebrate__stamp">{children}</div>
     </div>,

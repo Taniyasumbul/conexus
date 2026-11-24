@@ -28,7 +28,7 @@ export default function Contracts() {
           { value: "all", label: `All ${list.data?.length ?? ""}` },
           { value: "awaiting_human", label: `Needs human ${count("awaiting_human")}` },
           { value: "awaiting_reply", label: `Negotiating ${count("awaiting_reply")}` },
-          { value: "signed", label: `Signed ${count("signed")}` },
+          { value: "signed", label: `Sent to sign ${count("signed")}` },
           { value: "closed", label: `Closed ${count("closed")}` },
         ]} />
         <div style={{ position: "relative", width: "min(320px, 100%)" }}>
