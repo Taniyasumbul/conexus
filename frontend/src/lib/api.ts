@@ -5,7 +5,7 @@ export type RiskLevel = "low" | "medium" | "high";
 export type EscalationKind = "risky_clause" | "redline_rejected" | "new_legal_terms" | "no_deal_high_value" | "value_limit" | "unclear_reply" | "none";
 
 export interface Terms { price: number; payment_days: number; term_months: number }
-export interface DealContext { customer: string; segment: string; region: string; product: string; seats: number; list_price: number }
+export interface DealContext { customer: string; segment: string; region: string; product: string; seats: number; list_price: number; contact_email?: string | null }
 export interface Clause { id: string; type: string; heading: string; text: string; type_confidence: number }
 export interface ClauseRisk {
   clause_id: string; clause_type: string; level: RiskLevel; score: number; requires_human: boolean;

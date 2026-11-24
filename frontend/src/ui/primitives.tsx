@@ -109,7 +109,7 @@ export function Field({ label, hint, error, children, htmlFor }: { label: string
     <div className="nx-field">
       <label className="nx-field__label" htmlFor={htmlFor}>{label}</label>
       {children}
-      {error ? <span className="nx-field__error">{error}</span> : hint && <span className="nx-field__hint">{hint}</span>}
+      {error ? <span className="nx-field__error" role="alert">{error}</span> : hint && <span className="nx-field__hint">{hint}</span>}
     </div>
   );
 }
@@ -181,13 +181,16 @@ export function Tabs<T extends string>({ value, onChange, tabs }: {
 
 /* ---------------------------------------------------------------- table */
 export type Column<T> = { key: string; header: ReactNode; render: (row: T) => ReactNode; num?: boolean; width?: string };
-export function Table<T>({ columns, rows, rowKey, onRowClick, empty }: {
+export function Table<T>({ columns, rows, rowKey, onRowClick, empty, cards, caption }: {
   columns: Column<T>[]; rows: T[]; rowKey: (r: T) => string; onRowClick?: (r: T) => void; empty?: ReactNode;
+  /** below 640px, show each row as a labelled card instead of a scrolling table */
+  cards?: boolean; caption?: string;
 }) {
   if (!rows.length) return <>{empty ?? <EmptyState title="Nothing here yet" />}</>;
   return (
     <div className="nx-table-wrap">
-      <table className="nx-table">
+      <table className={`nx-table${cards ? " nx-table--cards" : ""}`}>
+        {caption && <caption className="nx-visually-hidden">{caption}</caption>}
         <thead>
           <tr>{columns.map((c) => <th key={c.key} className={c.num ? "num" : undefined} style={{ width: c.width }}>{c.header}</th>)}</tr>
         </thead>
@@ -195,7 +198,7 @@ export function Table<T>({ columns, rows, rowKey, onRowClick, empty }: {
           {rows.map((r) => (
             <tr key={rowKey(r)} className={onRowClick ? "clickable" : undefined} onClick={onRowClick && (() => onRowClick(r))}
               tabIndex={onRowClick ? 0 : undefined} onKeyDown={onRowClick && ((e) => e.key === "Enter" && onRowClick(r))}>
-              {columns.map((c) => <td key={c.key} className={c.num ? "num" : undefined}>{c.render(r)}</td>)}
+              {columns.map((c) => <td key={c.key} className={c.num ? "num" : undefined} data-label={typeof c.header === "string" ? c.header : undefined}>{c.render(r)}</td>)}
             </tr>
           ))}
         </tbody>

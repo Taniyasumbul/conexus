@@ -17,4 +17,5 @@ export * from "./charts";
 export * from "./motion";
 export * from "./document";
 export * from "./notifications";
+export * from "./workspace";
 export { AppShell, Logo } from "./AppShell";
